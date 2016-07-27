@@ -434,6 +434,17 @@ AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
  AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
  AND TO_CHAR(sh.start_time,'MM') = :P_MONTH
+ AND sh.source_location_gid = NVL(:P_SOURCE,sh.source_location_gid)
+ AND sh.dest_location_gid = NVL(:P_DEST,sh.dest_location_gid)
+
+ AND EXISTS
+ (SELECT 1
+ FROM shipment_refnum sh_ref
+ WHERE sh_ref.shipment_gid = sh.shipment_gid
+ AND sh_ref.shipment_refnum_qual_gid = :P_REGION
+ )
+
+
 --AND (SH.START_TIME) >= TO_DATE('2016-02-01','YYYY-MM-DD')
 --AND (SH.START_TIME) < TO_DATE('2016-02-10','YYYY-MM-DD')
  --AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
