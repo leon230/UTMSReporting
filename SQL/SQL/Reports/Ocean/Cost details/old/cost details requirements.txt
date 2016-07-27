@@ -1,0 +1,62 @@
+INLAND: shipment_end   (rozroznienie po transport_mode aka mode)
+
+sh end time (day+month+year)
+invoice_ready status
+inco
+linie
+tsp
+equipment 
+
+dane z shipmentu (olac faktury)
+
+
+(reszta kolumn jak ponizej)
+
+
+
+
+
+OCEAN: shipment_start (rozroznienie jw.)
+
+sh start date (day+month+year)
+order (cost per order, wylacznie zaplacone, koszty z invoicing)
+shipment 
+B/L????????????????????????????????
+invoice number (iv1 | iv2 | ...) 
+category
+material
+ocean/inland
+inbound/outbound (RELEASE ATTRIBUTE ?)
+incoterm
+CCC (P2P, D2D...)
+consignor (id, substitute loc, name, city, country)
+consignee (id, substitute loc, name, city, country)
+
+source location (id, substitute loc, name, city, country)
+
+port of loading (id, city, country)
+port of unloading (id, city, country)
+
+destination location (id, substitute loc, name, city, country)
+
+
+transport condition
+equipment
+tsp id
+tsp name
+Total gross weight
+
+
+
+(in columns)
+base cost (BAS)
+BAF, OTHC, DTHC
+reszta accessorials
+cost type
+
+[19 wytypowanych kosztów a reszta jako OTHER claimed cost]
+
+cancellation status (cancelled/not cancelled)
+
+SH insert user
+

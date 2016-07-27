@@ -1,0 +1,21 @@
+select loc.LOCATION_GID,
+loc.LOCATION_XID,
+loc.PROVINCE_CODE,
+loc.Country_code3_gid,
+cal.START_DATE,
+cal.DAYS_IN_CYCLE,
+act_cal.activity_time_factor,
+act_cal.ACTIVITY_GID,
+(((act_cal.BEGIN)/1000)/60)/60,
+(((act_cal.DURATION)/1000)/60)/60
+
+from location loc
+left outer join LOCATION_ROLE_PROFILE loc_rp on loc.location_gid = loc_rp.location_gid
+left outer join CALENDAR cal on loc_rp.calendar_gid = cal.calendar_gid
+left outer join ACTIVITY_CALENDAR act_cal on cal.CALENDAR_GID = act_cal.CALENDAR_GID
+
+where 
+
+Country_code3_gid = 'ITA'
+and
+act_cal.BEGIN is not null 

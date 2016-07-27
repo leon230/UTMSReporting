@@ -1,0 +1,13 @@
+1. ROZNICE DAT W h I NA ODWROT ZEBY NIE BYLO MINUSA
+2. dla obliczen wszystkich sh count i roznicach czasowych latest pickup na early pickup
+3. nowe kolumny za weekly cap flag (RECEIVED_VS_LATE_PICK - NOTIFICATION_TIME_H) < 0 penalty (jesli weekend to -48h)
+4. nowa kol transit time (sh end - sh start) (albo to co tam juz jest) if TT +/- 4 od TT na linii jest rozny to penalty (czyli jest range +/-5 do TT na linii)
+5. gln/pyer/CC tylko 1 
+
+
+101224242
+101231470
+
+
+fuel reimbursment + _e5
+price_rejected_vs_final - na final vs rejected

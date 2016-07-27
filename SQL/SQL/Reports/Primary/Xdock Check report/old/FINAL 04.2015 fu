@@ -1,0 +1,180 @@
+select ORLS.ORDER_RELEASE_GID,
+(select to_char(ss1.actual_arrival)
+			from shipment_stop ss1
+			where ss1.shipment_gid = ss.shipment_gid
+			and ss1.stop_num = ss.num_stops
+			
+			)																																				actual_delivery,
+			
+ss.source_location_gid																																			SH_SOURCE_LOC_GID,
+(select loc.location_name
+from location loc
+where loc.location_gid = ss.source_location_gid ) 																													sh_source_loc_name,
+orls.source_location_gid																																		OR_SOURCE_LOC_ID,
+(select loc.location_name
+from location loc
+where loc.location_gid = orls.source_location_gid ) 																											orls_source_loc_name,
+ss.dest_location_gid																																				SH_DEST_LOC_ID,
+(select loc.location_name
+from location loc
+where loc.location_gid = ss.dest_location_gid ) 																													sh_dest_loc_name,
+orls.dest_location_gid																																				ORLS_DEST_LOC_ID,
+(select loc.location_name
+from location loc
+where loc.location_gid = orls.dest_location_gid ) 																													orls_dest_loc_name,
+ss.shipment_gid,
+
+
+			(select or_ref.ORDER_RELEASE_REFNUM_VALUE
+			from order_release_refnum or_ref
+			where or_ref.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_PAYER'
+			and or_ref.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID)																							PAYER,
+			
+			
+
+ SS.SERVPROV_GID,
+ 
+ (select loc.location_name
+from location loc
+where loc.location_gid = SS.SERVPROV_GID ) 																	SERVPROV_NAME,
+(select or_ref.ORDER_RELEASE_REFNUM_VALUE
+			from order_release_refnum or_ref
+			where or_ref.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_COST CENTER'
+			and or_ref.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID)																							COST_CENTER,
+			
+			(select or_ref.ORDER_RELEASE_REFNUM_VALUE
+			from order_release_refnum or_ref
+			where or_ref.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_GLN'
+			and or_ref.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID)																							GLN,
+			
+			(select or_ref.ORDER_RELEASE_REFNUM_VALUE
+			from order_release_refnum or_ref
+			where or_ref.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.MATERIAL_TYPE'
+			and or_ref.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID)																							MATERIAL_TYPE,
+			(select or_ref.ORDER_RELEASE_REFNUM_VALUE
+			from order_release_refnum or_ref
+			where or_ref.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_TRANSPORT_CONDITION'
+			and or_ref.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID)																							SERVICE_LEVEL,
+			(SELECT   MAX (cost_gid)
+                                    FROM   shipment_cost sc
+                                   WHERE   sc.shipment_gid = ss.shipment_gid
+                                           AND sc.cost_type = 'B'
+			)																																				currency,
+			(SELECT   SUM (COST)
+                                    FROM   shipment_cost sc
+                                   WHERE   sc.shipment_gid = ss.shipment_gid
+                                           AND sc.cost_type <> 'O'
+			)																																				TOTAL_COST,
+			
+			
+ SS.SHIPMENT_TYPE_GID,
+ 
+ (select shs.STATUS_VALUE_GID
+		from shipment_status shs
+		
+		where  
+		 shs.SHIPMENT_GID = SS.SHIPMENT_GID
+		
+		
+		and SHS.STATUS_TYPE_GID = 'ULE/PR.SHIPMENT_COST'
+		
+		) AS                  STATUS_cost,
+		(select shs.STATUS_VALUE_GID
+		from shipment_status shs
+		
+		where  
+		 shs.SHIPMENT_GID = SS.SHIPMENT_GID
+		
+		
+		and SHS.STATUS_TYPE_GID = 'ULE/PR.FINANCE'
+		
+		) AS                  STATUS_finance,
+		(select shs.STATUS_VALUE_GID
+		from shipment_status shs
+		
+		where  
+		 shs.SHIPMENT_GID = SS.SHIPMENT_GID
+		
+		
+		and SHS.STATUS_TYPE_GID = 'ULE/PR.INVOICE_READY'
+		
+		) AS                  STATUS_invoice,
+    SS.RATE_GEO_GID,
+    SS.PLANNED_RATE_GEO_GID,
+ DECODE (
+               (SELECT   COUNT ( * )
+                  FROM   SHIPMENT S1
+                 WHERE   S1.SHIPMENT_GID LIKE 'ULE/PR%'
+                         AND (S1.currency_gid <>
+                                 (SELECT   MAX (cost_gid)
+                                    FROM   shipment_cost sc
+                                   WHERE   sc.shipment_gid = s1.shipment_gid
+                                           AND sc.cost_type = 'B')
+                              OR (s1.currency_gid IS NULL
+                                 ))
+                         AND S1.shipment_gid = SS.SHIPMENT_GID),
+               0,
+               'N',
+               'Y'
+            )
+               MISMACTH_CURRENCY,
+               
+               
+             case WHEN (SELECT listagG(SH_TEMP.SHIPMENT_GID,'/') within group (order by orls.ORDER_RELEASE_GID)
+			FROM SHIPMENT SH_TEMP,
+			VIEW_SHIPMENT_ORDER_RELEASE VORLS_TEMP,
+				ORDER_RELEASE ORLS_TEMP
+				
+			WHERE 1=1
+			AND SH_TEMP.SHIPMENT_GID = VORLS_TEMP.SHIPMENT_GID
+			AND ORLS_TEMP.ORDER_RELEASE_GID = VORLS_TEMP.ORDER_RELEASE_GID
+			AND ORLS_TEMP.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+			AND SH_TEMP.SHIPMENT_TYPE_GID = 'HANDLING'
+				
+			)
+			is not null then 'Y' else 'N' end as																											XDOCK_SHIPMENT
+			
+			
+			
+			
+		
+			
+      
+      
+    from
+    
+    shipment ss,
+	ORDER_RELEASE ORLS,
+	VIEW_SHIPMENT_ORDER_RELEASE VORLS
+    where
+	ORLS.ORDEr_RELEASE_GID = VORLS.ORDER_RELEASE_GID
+	AND SS.SHIPMENT_GID = VORLS.SHIPMENT_GID
+    AND  DECODE (
+               (SELECT   COUNT ( * )
+                  FROM   SHIPMENT S1
+                 WHERE   S1.SHIPMENT_GID LIKE 'ULE/PR%'
+                         AND (S1.currency_gid <>
+                                 (SELECT   MAX (cost_gid)
+                                    FROM   shipment_cost sc
+                                   WHERE   sc.shipment_gid = s1.shipment_gid
+                                           AND sc.cost_type = 'B')
+                              OR (s1.currency_gid IS NULL
+                                 ))
+                         AND S1.shipment_gid = SS.SHIPMENT_GID),
+               0,
+               'N',
+               'Y'
+            ) = 'Y'
+            
+            -- and ss.end_time >= to_dATE('2015-04-01','YYYY-MM-DD')
+			and (select trunc(ss1.actual_arrival)
+			from shipment_stop ss1
+			where ss1.shipment_gid = ss.shipment_gid
+			and ss1.stop_num = ss.num_stops) >= to_date('2015-04-01','YYYY-MM-DD')
+            
+            AND NOT EXISTS(SELECT 1
+	FROM shipment_refnum
+	WHERE shipment_gid = SS.shipment_gid
+	AND shipment_refnum_qual_gid = 'ULE.ULE_SHIPMENT_STREAM'
+	AND shipment_refnum_value = 'SECONDARY')
+        

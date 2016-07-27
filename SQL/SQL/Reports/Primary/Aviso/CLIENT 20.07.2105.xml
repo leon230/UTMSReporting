@@ -1,0 +1,730 @@
+<dataTemplate name="TSP_SUMMARY" description="TSP SUMMARY">
+ <parameters>
+  <parameter name="P_GL_USER" dataType="character" defaultValue="DBA.ADMIN" /> 
+  <parameter name="P_ROLE_ID" dataType="character" defaultValue="ADMIN" /> 
+  <parameter name="P_DATE_TIME_FORMAT" dataType="character" />
+  <parameter name="APP_LOC" dataType="character" />
+		
+  </parameters>
+  <lexicals /> 
+ <dataQuery>
+  
+  
+ <sqlStatement name="Q_TSP_CLAIMED_SPEND_DETAILS">
+<![CDATA[ 
+SELECT DISTINCT SH.SHIPMENT_GID AS																														SH_ID,
+		ORLS.ORDER_RELEASE_GID	AS																														OR_ID,
+		TO_CHAR(UTC.GET_LOCAL_DATE(sh.start_time,orls.source_location_gid),'YYYY-MM-DD HH24:MI:SS') AS											SH_START_TIME,
+		TO_CHAR(UTC.GET_LOCAL_DATE(sh.end_time,orls.dest_location_gid),'YYYY-MM-DD HH24:MI:SS') AS 											SH_END_TIME,
+		(select listagg(SHR_RA.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_RA.SHIPMENT_GID)																										
+		from SHIPMENT_REFNUM SHR_RA 
+		where (SHR_RA.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_RA.SHIPMENT_REFNUM_QUAL_GID='ULE/PR.ULE_OR_REL_ATR')
+		) as 																																			RELEASE_ATTR,
+		ORLS.INDICATOR AS 																																OR_INDICATOR,
+		(
+		select listagg(SHR_REGION.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SH_REGION.SHIPMENT_GID)
+		from SHIPMENT SH_REGION
+				LEFT OUTER JOIN SHIPMENT_REFNUM SHR_REGION ON (SH_REGION.SHIPMENT_GID = SHR_REGION.SHIPMENT_GID 
+				AND SHR_REGION.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_FUNCTIONAL_REGION')
+		where
+			SH_REGION.DOMAIN_NAME ='ULE/PR'
+			AND	SH_REGION.SHIPMENT_GID = SH.SHIPMENT_GID
+		) 	as 																																			REGION,	
+			
+			
+		ORLS.SOURCE_LOCATION_GID AS																														SOURCE_LOC_ID,
+		LOC_SOURCE.CITY AS 																																SOURCE_CITY,
+		LOC_SOURCE.LOCATION_NAME AS 																													SOURCE_NAME,
+		ORLS.DEST_LOCATION_GID	AS																														DEST_LOC_ID,
+		LOC_DEST.CITY AS 																																DESTINATION_CITY,
+		LOC_DEST.LOCATION_NAME AS 																														DEST_NAME,
+		(sh.servprov_gid) as 																															SERVICE_PROVIDER,
+		(select loc_tsp.LOCATION_NAME
+		from shipment sh_servprov
+		LEFT OUTER JOIN location loc_tsp ON (loc_tsp.location_gid = sh_servprov.servprov_gid)
+		where
+			sh_servprov.shipment_gid = sh.shipment_gid
+		)as 																																			SERVICE_PROVIDER_NAME,
+		SU.TRANSPORT_HANDLING_UNIT_GID AS 																												TRANSPORT_HANDLING_UNIT,
+		TO_CHAR(SU.SHIP_UNIT_COUNT,'9,999,999.99') AS 																									NUMBER_OF_PALLETS,
+		LTRIM(TO_CHAR(su.TOTAL_GROSS_WEIGHT_BASE*0.45,'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''')) AS 											GROSS_WEIGHT,
+		(
+		select listagg(SH_COND.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SH_COND.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SH_COND
+		
+		where SH_COND.SHIPMENT_GID = SH.SHIPMENT_GID 
+		AND SH_COND.SHIPMENT_REFNUM_QUAL_GID ='ULE.ULE_TRANSPORT_CONDITION'
+		
+		
+		) AS 																																			TRANSPORT_COND,
+		(
+		select listagg(SH_CAT.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SH_CAT.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SH_CAT
+		
+		where SH_CAT.SHIPMENT_GID = SH.SHIPMENT_GID 
+		AND SH_CAT.SHIPMENT_REFNUM_QUAL_GID ='ULE.ULE_MATERIAL_CATEGORY'
+		
+		
+		) AS 																																			CATEGORY,
+		SH.IS_HAZARDOUS AS 																																HAZARDOUS,
+		(
+		select listagg(orlsr_SPEC.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY orlsr_SPEC.ORDER_RELEASE_GID)
+		from ORDER_RELEASE_REFNUM orlsr_SPEC
+		
+		where orls.ORDER_RELEASE_GID = orlsr_SPEC.ORDER_RELEASE_GID 
+				AND orlsr_SPEC.ORDER_RELEASE_REFNUM_QUAL_GID IN ('ULE.ULE_SPECIAL_ORDER')
+		
+		
+		) AS 																																			SPECIAL_ORDER,
+		(select listagg(SHR_STAND.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_STAND.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_STAND
+		where SHR_STAND.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_STAND.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_STANDBY_TRAILER'
+		
+		) as 																																			STAND_TRAILER,
+		(
+		select listagg(orlsr_EXP.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY orlsr_EXP.ORDER_RELEASE_GID)
+		from ORDER_RELEASE_REFNUM orlsr_EXP
+		
+		where orls.ORDER_RELEASE_GID = orlsr_EXP.ORDER_RELEASE_GID 
+				AND orlsr_EXP.ORDER_RELEASE_REFNUM_QUAL_GID IN ('ULE.ULE_EXPRESS_BY_CUSTOMER')
+		
+		
+		) AS 																																			EXPRESS,
+		SH.INCO_TERM_GID AS 																															INCOTERM,	
+		(
+		select listagg(orlsr_multi.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY orlsr_multi.ORDER_RELEASE_GID)
+		from ORDER_RELEASE_REFNUM orlsr_multi
+		
+		where orls.ORDER_RELEASE_GID = orlsr_multi.ORDER_RELEASE_GID 
+				AND orlsr_multi.ORDER_RELEASE_REFNUM_QUAL_GID IN ('ULE.ULE_MULTISTOP')
+		
+		
+		) AS 																																			IS_MULTISTOP,
+
+		(
+		select listagg(ORS_STATUS.STATUS_VALUE_GID,'|') WITHIN GROUP (ORDER BY ORS_STATUS.ORDER_RELEASE_GID)
+		from ORDER_RELEASE_STATUS ORS_STATUS
+		
+		where orls.ORDER_RELEASE_GID = ORS_STATUS.ORDER_RELEASE_GID 
+				AND ORS_STATUS.STATUS_TYPE_GID IN ('ULE/PR.PLANNING')
+		
+		
+		) AS 																																			STATUS,
+		ORLS.INSERT_USER AS 																															orls_INSERT_USER,
+		ORLS.DOMAIN_NAME AS																																orls_DOMAIN_NAME,
+		SH.INDICATOR AS 																																SH_INDICATOR,
+		(
+		select listagg(SHS_SECURE.STATUS_VALUE_GID,'|') WITHIN GROUP (ORDER BY SHS_SECURE.SHIPMENT_GID)
+		from SHIPMENT_STATUS SHS_SECURE
+		
+		where SH.SHIPMENT_GID = SHS_SECURE.SHIPMENT_GID 
+				AND SHS_SECURE.STATUS_TYPE_GID IN ('ULE/PR.SECURE RESOURCES')
+		
+		
+		) AS 																																			SECURE_RES_STATUS,
+		'"'||(
+		select listagg(orlsr_po.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY orlsr_po.ORDER_RELEASE_GID)
+		from ORDER_RELEASE_REFNUM orlsr_po 
+		
+		where orls.ORDER_RELEASE_GID = orlsr_po.ORDER_RELEASE_GID 
+				AND orlsr_po.ORDER_RELEASE_REFNUM_QUAL_GID IN ('PO','ULE.ULE_PO_NUMBER','ULE.ULE_SAP_PO_NUMBER','CUST_PO','ULE.ULE_FINANCE_PO_NUMBER')
+		
+		
+		)||'"' AS 																																		OR_PO_NUM,
+		'"'||(
+		select listagg(orlsr_DN_ULE.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY orlsr_DN_ULE.ORDER_RELEASE_GID)
+		from ORDER_RELEASE_REFNUM orlsr_DN_ULE 
+		
+		where orls.ORDER_RELEASE_GID = orlsr_DN_ULE.ORDER_RELEASE_GID 
+				AND orlsr_DN_ULE.ORDER_RELEASE_REFNUM_QUAL_GID IN ('ULE.ULE_DN_NUMBER','UL_SAP_DN')
+		
+		
+		)||'"' AS 																																		OR_DN_NUM,
+		'"'||(select listagg(SHR_PO.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_PO.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_PO 
+		where SHR_PO.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_PO.SHIPMENT_REFNUM_QUAL_GID = 'ULE.PO'
+		)||'"' as 																																		SH_PO,
+		'"'||(select listagg(SHR_DN.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_DN.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_DN
+		where SHR_DN.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_DN.SHIPMENT_REFNUM_QUAL_GID = 'ULE.DN'
+		)||'"' as 																																		SH_DN,
+		'"'||(select listagg(SHR_PLATE.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_PLATE.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_PLATE 
+		where SHR_PLATE.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_PLATE.SHIPMENT_REFNUM_QUAL_GID = 'ULE.TRUCK PLATE'
+		
+		)||'"' as 																																		TRUCK_PLATE,
+		'"'||(select listagg(SHR_TRAILER.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_TRAILER.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_TRAILER 
+		where (SHR_TRAILER.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_TRAILER.SHIPMENT_REFNUM_QUAL_GID = 'TRAILER')
+		
+		)||'"' as 																																		TRAILER_NUMBER,
+		TO_CHAR(UTC.GET_LOCAL_DATE(ORLS.EARLY_PICKUP_DATE,ORLS.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI')                                               EARLY_PICKUP_DATE,
+		TO_CHAR(UTC.GET_LOCAL_DATE(ORLS.LATE_PICKUP_DATE,ORLS.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI')                                                LATE_PICKUP_DATE,
+		TO_CHAR(UTC.GET_LOCAL_DATE(ORLS.EARLY_DELIVERY_DATE,ORLS.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI')                                               EARLY_DELIVERY_DATE,
+		TO_CHAR(UTC.GET_LOCAL_DATE(ORLS.LATE_DELIVERY_DATE,ORLS.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI')                                                LATE_DELIVERY_DATE,
+		
+		
+		
+		SS.STOP_NUM AS 																																	STOP_NUM,
+		ss.stop_type as																																	STOP_TYPE,
+		SS.LOCATION_GID AS																																APP_LOCATION,
+		(CASE WHEN ss.stop_type ='D' THEN 
+		(
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_START_TIME,ORLS.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_type ='P' THEN (
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_START_TIME,ORLS.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		ELSE NULL
+		END
+		) AS 																																			APP_START,
+		
+		(CASE WHEN ss.stop_type ='D' THEN 
+		(
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_END_TIME,ORLS.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_type ='P' THEN (
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_END_TIME,ORLS.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		ELSE NULL
+		END
+		) AS 																																			APP_END,
+		(
+		SELECT listagg(LR_LOAD_T.location_resource_name,'|') 
+		WITHIN GROUP (ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)	AS 																																			APP_DOCK,
+		TO_CHAR(UTC.GET_LOCAL_DATE(SS.PLANNED_ARRIVAL,SS.LOCATION_GID),'YYYY-MM-DD HH24:MI') AS 														PLANNED_ARRIVAL,
+		(CASE WHEN ss.stop_type ='P' THEN 
+		(CASE WHEN sh.start_time >= (select orls_temp.late_pickup_date
+		from order_release orls_temp
+		where orls_temp.order_release_gid = ORLS.order_release_gid
+		) THEN TO_CHAR(UTC.GET_LOCAL_DATE(sh.start_time,orls.source_location_gid),'YYYY-MM-DD HH24:MI')
+		ELSE 
+		(select TO_CHAR(UTC.GET_LOCAL_DATE(orls_temp.late_pickup_date,orls.source_location_gid),'YYYY-MM-DD HH24:MI')
+		from order_release orls_temp
+		where orls_temp.order_release_gid = ORLS.order_release_gid
+		)
+		END) 
+		WHEN ss.stop_type ='D' THEN
+		(CASE WHEN sh.end_time >= (select orls_temp.late_delivery_date
+		from order_release orls_temp
+		where orls_temp.order_release_gid = ORLS.order_release_gid
+		) THEN TO_CHAR(UTC.GET_LOCAL_DATE(sh.end_time,orls.dest_location_gid),'YYYY-MM-DD HH24:MI')
+		ELSE 
+		(select TO_CHAR(UTC.GET_LOCAL_DATE(orls_temp.late_delivery_date,orls.dest_location_gid),'YYYY-MM-DD HH24:MI')
+		from order_release orls_temp
+		where orls_temp.order_release_gid = ORLS.order_release_gid
+		)
+		END)
+
+		END) AS																																	latest_pick_del_date
+
+		
+FROM
+	SHIPMENT_STOP SS,
+	SHIPMENT SH,
+	SHIPMENT_STOP_D SSD,
+	S_SHIP_UNIT SSU,
+	S_SHIP_UNIT_LINE SSUL,
+	ORDER_RELEASE ORLS,
+	LOCATION LOC_SOURCE,
+	LOCATION LOC_DEST,
+	/* SHIP_UNIT_EQUIP_REF_UNIT_JOIN SUERUJ_PALLET, */
+	ship_unit su
+
+WHERE 1=1
+	AND SH.DOMAIN_NAME in ('ULE/PR','SERVPROV','ULE')
+	AND	SH.SHIPMENT_TYPE_GID IN ('TRANSPORT')
+	
+	AND	SS.SHIPMENT_GID = SH.SHIPMENT_GID
+	AND SSD.SHIPMENT_GID = SS.SHIPMENT_GID
+	AND SSD.STOP_NUM = SS.STOP_NUM
+	AND SSD.S_SHIP_UNIT_GID = SSU.S_SHIP_UNIT_GID
+	AND SSU.S_SHIP_UNIT_GID = SSUL.S_SHIP_UNIT_GID
+	AND SSUL.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+	
+	/* and	su.SHIP_UNIT_GID = SUERUJ_PALLET.SHIP_UNIT_GID */
+	and	su.SHIP_UNIT_GID = SSU.SHIP_UNIT_GID
+	
+	AND	LOC_SOURCE.LOCATION_GID = ORLS.SOURCE_LOCATION_GID
+	AND	LOC_DEST.LOCATION_GID = ORLS.DEST_LOCATION_GID
+	
+	
+	/* AND	SH.INSERT_DATE BETWEEN TO_DATE('2013-09-01','YYYY-MM-DD') AND TO_DATE('2013-09-30','YYYY-MM-DD') */
+	/* and ORLS.source_location_gid = 'ULE.V50281550' */
+	/* and	sh.shipment_gid like '%ULE.KLOG_18/12_ND2%' */
+
+	
+/* 	
+	and	sh.start_time between to_date(nvl(:START_TIME, to_CHAR(trunc((trunc(sysdate,'MM')-1),'MM'),:P_DATE_TIME_FORMAT)),:P_DATE_TIME_FORMAT) AND 
+	to_date(NVL(:END_TIME,to_CHAR(trunc(LAST_DAY(add_months(SYSDATE,1))+1),:P_DATE_TIME_FORMAT)),:P_DATE_TIME_FORMAT) */
+	
+	/* AND SS.LOCATION_GID = 'ULE.'||nvl(:APP_LOC,REPLACE(SS.LOCATION_GID,'ULE.','')) */
+	and	SS.LOCATION_GID in 
+	(
+	SELECT 'FAKE' FROM DUAL
+	UNION ALL
+	select DISTINCT u_app.VALUE   AS LOCATION
+	from gl_user gl_u,
+                gl_user gl_u_app 
+                LEFT OUTER JOIN USER_APPDATA u_app on (gl_u_app.GL_USER_GID = u_app.GL_USER_GID)
+                --LEFT OUTER JOIN region reg on (u_app.VALUE = reg.REPRESENTATIVE_LOCATION_GID)
+                --LEFT OUTER JOIN REGION_DETAIL reg_det on (reg.REGION_GID = reg_det.REGION_GID)
+	where	gl_u.GL_USER_GID = gl_u_app.GL_USER_GID
+                AND gl_u.DOMAIN_NAME IN ('ULE/PR','SERVPROV','ULE','ULE/SE')
+				AND	gl_u.GL_USER_GID =:P_GL_USER
+				AND	SUBSTR(u_app.VALUE,1,7) <> 'ULE.VPD'
+	UNION ALL
+	(
+	select  DISTINCT reg_det.LOCATION_GID  AS LOCATION  
+	from gl_user gl_u,
+                gl_user gl_u_app 
+                LEFT OUTER JOIN USER_APPDATA u_app on (gl_u_app.GL_USER_GID = u_app.GL_USER_GID)
+                LEFT OUTER JOIN LOCATION_PROFILE reg on (u_app.VALUE = reg.LOCATION_PROFILE_GID)
+                LEFT OUTER JOIN LOCATION_PROFILE_DETAIL reg_det on (reg.LOCATION_PROFILE_GID = reg_det.LOCATION_PROFILE_GID)
+	where	gl_u.GL_USER_GID = gl_u_app.GL_USER_GID 
+                AND gl_u.DOMAIN_NAME IN ('ULE/PR','SERVPROV','ULE','ULE/SE')
+				AND	gl_u.GL_USER_GID =:P_GL_USER
+	)
+
+	)
+	
+	AND	sh.start_time >= TRUNC(SYSDATE) - 16
+	AND	sh.start_time <= TRUNC(SYSDATE) + 5
+	
+	AND SS.LOCATION_GID = nvl(:APP_LOC,SS.LOCATION_GID)
+
+	
+UNION ALL
+(
+SELECT SH.SHIPMENT_GID	AS																														SH_ID,
+		'ORDERLESS' AS 																															OR_ID,
+		TO_CHAR(UTC.GET_LOCAL_DATE(sh.start_time,sh.source_location_gid),'YYYY-MM-DD HH24:MI:SS') AS											SH_START_TIME,
+		TO_CHAR(UTC.GET_LOCAL_DATE(sh.end_time,sh.dest_location_gid),'YYYY-MM-DD HH24:MI:SS') AS 												SH_END_TIME,
+		
+		(select listagg(SHR_RA.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_RA.SHIPMENT_GID)																										
+		from SHIPMENT_REFNUM SHR_RA 
+		where (SHR_RA.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_RA.SHIPMENT_REFNUM_QUAL_GID='ULE/PR.ULE_OR_REL_ATR')
+		) as 																																	RELEASE_ATTR,
+		'N/A' AS 																																OR_INDICATOR,
+		(
+		select listagg(SHR_REGION.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SH_REGION.SHIPMENT_GID)
+		from SHIPMENT SH_REGION
+				LEFT OUTER JOIN SHIPMENT_REFNUM SHR_REGION ON (SH_REGION.SHIPMENT_GID = SHR_REGION.SHIPMENT_GID 
+				AND SHR_REGION.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_FUNCTIONAL_REGION')
+		where
+			SH_REGION.DOMAIN_NAME ='ULE/PR'
+			AND	SH_REGION.SHIPMENT_GID = SH.SHIPMENT_GID
+		) 	as 																																	REGION,
+		SH.SOURCE_LOCATION_GID AS																												SOURCE_LOC_ID,
+		LOC_SOURCE.CITY AS 																														SOURCE_CITY,
+		LOC_SOURCE.LOCATION_NAME AS 																											SOURCE_NAME,
+		SH.DEST_LOCATION_GID AS																													DEST_LOC_ID,
+		LOC_DEST.CITY AS 																														DESTINATION_CITY,
+		LOC_DEST.LOCATION_NAME AS 																												DEST_NAME,
+		(sh.servprov_gid) as 																													SERVICE_PROVIDER,
+		
+		(select loc_tsp.LOCATION_NAME
+		from shipment sh_servprov
+		LEFT OUTER JOIN location loc_tsp ON (loc_tsp.location_gid = sh_servprov.servprov_gid)
+		where
+			sh_servprov.shipment_gid = sh.shipment_gid
+		)as 																																	SERVICE_PROVIDER_NAME,
+		
+		
+		
+		SU.TRANSPORT_HANDLING_UNIT_GID AS 																										TRANSPORT_HANDLING_UNIT,
+		TO_CHAR(SH.TOTAL_SHIP_UNIT_COUNT,'9,999,999.99') AS 																							NUMBER_OF_PALLETS,
+		LTRIM(TO_CHAR(su.TOTAL_GROSS_WEIGHT_BASE*0.45,'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''')) AS 									GROSS_WEIGHT,
+		(
+		select listagg(SH_COND.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SH_COND.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SH_COND
+		
+		where SH_COND.SHIPMENT_GID = SH.SHIPMENT_GID 
+		AND SH_COND.SHIPMENT_REFNUM_QUAL_GID ='ULE.ULE_TRANSPORT_CONDITION'
+		
+		
+		) AS 																																	TRANSPORT_COND,
+		(
+		select listagg(SH_CAT.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SH_CAT.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SH_CAT
+		
+		where SH_CAT.SHIPMENT_GID = SH.SHIPMENT_GID 
+		AND SH_CAT.SHIPMENT_REFNUM_QUAL_GID ='ULE.ULE_MATERIAL_CATEGORY'
+		
+		
+		) AS 																																	CATEGORY,
+		SH.IS_HAZARDOUS AS 																														HAZARDOUS,
+		'N/A' AS																																SPECIAL_ORDER,
+		(select listagg(SHR_STAND.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_STAND.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_STAND
+		where SHR_STAND.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_STAND.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_STANDBY_TRAILER'
+		
+		) as 																																	STAND_TRAILER,
+		
+		'N/A' AS 																																EXPRESS,
+		SH.INCO_TERM_GID AS 																													INCOTERM,
+		'N/A' AS 																																IS_MULTISTOP,
+		'N/A' AS																																STATUS,
+		SH.INSERT_USER AS 																														orls_INSERT_USER,
+		SH.DOMAIN_NAME AS																														orls_DOMAIN_NAME,
+		SH.INDICATOR AS 																														SH_INDICATOR,
+		(
+		select listagg(SHS_SECURE.STATUS_VALUE_GID,'|') WITHIN GROUP (ORDER BY SHS_SECURE.SHIPMENT_GID)
+		from SHIPMENT_STATUS SHS_SECURE
+		
+		where SH.SHIPMENT_GID = SHS_SECURE.SHIPMENT_GID 
+				AND SHS_SECURE.STATUS_TYPE_GID IN ('ULE/PR.SECURE RESOURCES')
+		
+		
+		) AS 																																	SECURE_RES_STATUS,
+
+		'N/A' AS 																																OR_po_num,
+		'N/A' AS																																OR_DN_NUM,
+		'"'||(select listagg(SHR_PO.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_PO.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_PO 
+		where SHR_PO.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_PO.SHIPMENT_REFNUM_QUAL_GID = 'ULE.PO'
+		)||'"' as 																																sh_PO,
+		'"'||(select listagg(SHR_DN.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_DN.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_DN
+		where SHR_DN.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_DN.SHIPMENT_REFNUM_QUAL_GID = 'ULE.DN'
+		)||'"' as 																																SH_DN,
+		
+		
+		'"'||(select listagg(SHR_PLATE.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_PLATE.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_PLATE 
+		where SHR_PLATE.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_PLATE.SHIPMENT_REFNUM_QUAL_GID = 'ULE.TRUCK PLATE'
+		
+		)||'"' as TRUCK_PLATE,
+		'"'||(select listagg(SHR_TRAILER.SHIPMENT_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY SHR_TRAILER.SHIPMENT_GID)
+		from SHIPMENT_REFNUM SHR_TRAILER 
+		where (SHR_TRAILER.SHIPMENT_GID = sh.SHIPMENT_GID AND SHR_TRAILER.SHIPMENT_REFNUM_QUAL_GID = 'TRAILER')
+		
+		)||'"' as TRAILER_NUMBER,
+		'N/A' AS 																																EARLY_PICKUP_DATE,
+		'N/A' AS 																																LATE_PICKUP_DATE,
+		'N/A' AS 																																EARLY_DELIVERY_DATE,
+		'N/A' AS 																																LATE_DELIVERY_DATE,
+		
+		
+		SS.STOP_NUM AS 																															STOP_NUM,
+		ss.stop_type as																																	STOP_TYPE,
+		SS.LOCATION_GID AS																														APP_LOCATION,
+		(CASE WHEN ss.stop_type ='D' THEN 
+		(
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_START_TIME,SH.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_type ='P' THEN (
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_START_TIME,SH.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_num ='1' THEN (
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_START_TIME,SH.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_num ='2' THEN 
+		(
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_START_TIME,SH.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		ELSE NULL
+		END
+		) AS 																																			APP_START,
+		
+		(CASE WHEN ss.stop_type ='D' THEN 
+		(
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_END_TIME,SH.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_type ='P' THEN (
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_END_TIME,SH.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_num ='1' THEN (
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_END_TIME,SH.SOURCE_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		WHEN ss.stop_num ='2' THEN 
+		(
+		SELECT listagg(TO_CHAR(UTC.GET_LOCAL_DATE(APP_LOAD_T.APPOINTMENT_END_TIME,SH.DEST_LOCATION_GID),'YYYY-MM-DD HH24:MI'),'|') 
+		WITHIN GROUP(ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				/* AND	(ORLS.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)
+		ELSE NULL
+		END
+		) AS 																																			APP_END,
+		(
+		SELECT listagg(LR_LOAD_T.location_resource_name,'|') 
+		WITHIN GROUP (ORDER BY SH_APP_LOAD_T.SHIPMENT_GID)
+		FROM SHIPMENT SH_APP_LOAD_T
+				LEFT OUTER JOIN APPOINTMENT APP_LOAD_T ON (APP_LOAD_T.OBJECT_GID = SH_APP_LOAD_T.SHIPMENT_GID)
+				LEFT OUTER JOIN LOCATION_RESOURCE LR_LOAD_T ON (LR_LOAD_T.LOCATION_RESOURCE_GID = APP_LOAD_T.LOCATION_RESOURCE_GID)
+		WHERE 1=1
+				AND	SH_APP_LOAD_T.SHIPMENT_GID = SH.SHIPMENT_GID
+				AND	APP_LOAD_T.STOP_NUM  = SS.STOP_NUM
+				AND APP_LOAD_T.INSERT_DATE = (select distinct 
+        max(APP_LOAD_T_temp.INSERT_DATE)
+        from APPOINTMENT APP_LOAD_T_temp
+        where APP_LOAD_T_temp.OBJECT_GID = APP_LOAD_T.OBJECT_GID
+		AND	APP_LOAD_T_temp.STOP_NUM = APP_LOAD_T.STOP_NUM)
+				/* AND	(SH.SOURCE_LOCATION_GID = LR_LOAD_T.LOCATION_GID OR LR_LOAD_T.LOCATION_GID IS NULL) */
+		)	AS 																																			APP_DOCK,
+		TO_CHAR(UTC.GET_LOCAL_DATE(SS.PLANNED_ARRIVAL,SS.LOCATION_GID),'YYYY-MM-DD HH24:MI') AS 														PLANNED_ARRIVAL,
+		(CASE WHEN ss.stop_type ='P' THEN 
+			TO_CHAR(UTC.GET_LOCAL_DATE(sh.start_time,sh.source_location_gid),'YYYY-MM-DD HH24:MI')
+		WHEN ss.stop_type ='D' THEN
+			TO_CHAR(UTC.GET_LOCAL_DATE(sh.end_time,sh.dest_location_gid),'YYYY-MM-DD HH24:MI')
+		END) AS																																	latest_pick_del_date
+		
+
+
+FROM
+		SHIPMENT SH
+				LEFT OUTER JOIN SHIPMENT_STOP SS ON	(SS.SHIPMENT_GID = SH.SHIPMENT_GID)
+				LEFT OUTER JOIN SHIPMENT_STOP_D SSD ON (SSD.SHIPMENT_GID = SS.SHIPMENT_GID AND SSD.STOP_NUM = SS.STOP_NUM)
+				LEFT OUTER JOIN S_SHIP_UNIT SSU ON (SSD.S_SHIP_UNIT_GID = SSU.S_SHIP_UNIT_GID)
+				LEFT OUTER JOIN S_SHIP_UNIT_LINE SSUL ON (SSU.S_SHIP_UNIT_GID = SSUL.S_SHIP_UNIT_GID)
+				LEFT OUTER JOIN ship_unit su ON (su.SHIP_UNIT_GID = SSU.SHIP_UNIT_GID),
+				/* LEFT OUTER JOIN SHIP_UNIT_EQUIP_REF_UNIT_JOIN SUERUJ_PALLET on (su.SHIP_UNIT_GID = SUERUJ_PALLET.SHIP_UNIT_GID), */
+				
+		LOCATION LOC_SOURCE,
+		LOCATION LOC_DEST
+
+WHERE 1=1	
+	AND SH.DOMAIN_NAME in ('ULE/PR','SERVPROV','ULE')
+	AND	SH.SHIPMENT_TYPE_GID IN ('APPOINTMENT')
+	
+	AND	LOC_SOURCE.LOCATION_GID = SH.SOURCE_LOCATION_GID
+	AND	LOC_DEST.LOCATION_GID = SH.DEST_LOCATION_GID
+	
+/* 	and	sh.start_time between to_date(nvl(:START_TIME, to_CHAR(trunc((trunc(sysdate,'MM')-1),'MM'),:P_DATE_TIME_FORMAT)),:P_DATE_TIME_FORMAT) AND 
+	to_date(NVL(:END_TIME,to_CHAR(trunc(LAST_DAY(add_months(SYSDATE,1))+1),:P_DATE_TIME_FORMAT)),:P_DATE_TIME_FORMAT) */
+	
+	/* AND SS.LOCATION_GID = 'ULE.'||nvl(:APP_LOC,REPLACE(SS.LOCATION_GID,'ULE.','')) */
+	and	SS.LOCATION_GID in 
+	(
+	SELECT 'FAKE' FROM DUAL
+	UNION ALL
+	select DISTINCT u_app.VALUE   AS LOCATION
+	from gl_user gl_u,
+                gl_user gl_u_app 
+                LEFT OUTER JOIN USER_APPDATA u_app on (gl_u_app.GL_USER_GID = u_app.GL_USER_GID)
+                --LEFT OUTER JOIN region reg on (u_app.VALUE = reg.REPRESENTATIVE_LOCATION_GID)
+                --LEFT OUTER JOIN REGION_DETAIL reg_det on (reg.REGION_GID = reg_det.REGION_GID)
+	where	gl_u.GL_USER_GID = gl_u_app.GL_USER_GID
+                AND gl_u.DOMAIN_NAME IN ('ULE/PR','SERVPROV','ULE','ULE/SE')
+				AND	gl_u.GL_USER_GID =:P_GL_USER
+				AND	SUBSTR(u_app.VALUE,1,7) <> 'ULE.VPD'
+	UNION ALL
+	(
+	select  DISTINCT reg_det.LOCATION_GID  AS LOCATION  
+	from gl_user gl_u,
+                gl_user gl_u_app 
+                LEFT OUTER JOIN USER_APPDATA u_app on (gl_u_app.GL_USER_GID = u_app.GL_USER_GID)
+                LEFT OUTER JOIN LOCATION_PROFILE reg on (u_app.VALUE = reg.LOCATION_PROFILE_GID)
+                LEFT OUTER JOIN LOCATION_PROFILE_DETAIL reg_det on (reg.LOCATION_PROFILE_GID = reg_det.LOCATION_PROFILE_GID)
+	where	gl_u.GL_USER_GID = gl_u_app.GL_USER_GID 
+                AND gl_u.DOMAIN_NAME IN ('ULE/PR','SERVPROV','ULE','ULE/SE')
+				AND	gl_u.GL_USER_GID =:P_GL_USER
+	)
+
+	)
+	
+	/* and	sh.shipment_gid like '%ULE.KLOG_18/12_ND2%' */
+	
+	AND	sh.start_time >= TRUNC(SYSDATE) - 16
+	AND	sh.start_time <= TRUNC(SYSDATE) + 5
+	
+	AND SS.LOCATION_GID = nvl(:APP_LOC,SS.LOCATION_GID)
+)
+]]> 
+ </sqlStatement> 
+ 
+ </dataQuery>
+ <dataStructure> 
+ <group name="Q_TSP_CLAIMED_SPEND_DETAILS" dataType="varchar2" source="Q_TSP_CLAIMED_SPEND_DETAILS">
+   <element name="SH_ID" dataType="varchar2" value="SH_ID" /> 
+   <element name="OR_ID" dataType="varchar2" value="OR_ID" /> 
+   <element name="SH_START_TIME" dataType="varchar2" value="SH_START_TIME" /> 
+   <element name="SH_END_TIME" dataType="varchar2" value="SH_END_TIME" /> 
+   <element name="RELEASE_ATTR" dataType="varchar2" value="RELEASE_ATTR" /> 
+   <element name="OR_INDICATOR" dataType="varchar2" value="OR_INDICATOR" /> 
+   <element name="REGION" dataType="varchar2" value="REGION" /> 
+   <element name="SOURCE_LOC_ID" dataType="varchar2" value="SOURCE_LOC_ID" /> 
+   <element name="SOURCE_CITY" dataType="varchar2" value="SOURCE_CITY" /> 
+   <element name="SOURCE_NAME" dataType="varchar2" value="SOURCE_NAME" /> 
+   <element name="DEST_LOC_ID" dataType="varchar2" value="DEST_LOC_ID" /> 
+   <element name="DESTINATION_CITY" dataType="varchar2" value="DESTINATION_CITY" /> 
+   <element name="DEST_NAME" dataType="varchar2" value="DEST_NAME" /> 
+   <element name="SERVICE_PROVIDER" dataType="varchar2" value="SERVICE_PROVIDER" /> 
+   <element name="SERVICE_PROVIDER_NAME" dataType="varchar2" value="SERVICE_PROVIDER_NAME" /> 
+   <element name="TRANSPORT_HANDLING_UNIT" dataType="varchar2" value="TRANSPORT_HANDLING_UNIT" /> 
+   <element name="NUMBER_OF_PALLETS" dataType="varchar2" value="NUMBER_OF_PALLETS" /> 
+   <element name="OR_GROSS_WEIGHT" dataType="varchar2" value="OR_GROSS_WEIGHT" /> 
+   <element name="TRANSPORT_COND" dataType="varchar2" value="TRANSPORT_COND" /> 
+   <element name="CATEGORY" dataType="varchar2" value="CATEGORY" /> 
+   <element name="HAZARDOUS" dataType="varchar2" value="HAZARDOUS" /> 
+   <element name="SPECIAL_ORDER" dataType="varchar2" value="SPECIAL_ORDER" /> 
+   <element name="STAND_TRAILER" dataType="varchar2" value="STAND_TRAILER" /> 
+   <element name="EXPRESS" dataType="varchar2" value="EXPRESS" /> 
+   <element name="INCOTERM" dataType="varchar2" value="INCOTERM" /> 
+   <element name="INCOTERM" dataType="varchar2" value="INCOTERM" /> 
+   <element name="STATUS" dataType="varchar2" value="STATUS" /> 
+   <element name="orls_INSERT_USER" dataType="varchar2" value="orls_INSERT_USER" /> 
+   <element name="orls_DOMAIN_NAME" dataType="varchar2" value="orls_DOMAIN_NAME" />
+   <element name="SH_INDICATOR" dataType="varchar2" value="SH_INDICATOR" />
+   <element name="SECURE_RES_STATUS" dataType="varchar2" value="SECURE_RES_STATUS" />
+   <element name="OR_PO_NUM" dataType="varchar2" value="OR_PO_NUM" />
+   <element name="OR_DN_NUM" dataType="varchar2" value="OR_DN_NUM" />
+   <element name="SH_PO" dataType="varchar2" value="SH_PO" />
+   <element name="SH_DN" dataType="varchar2" value="SH_DN" />
+   <element name="TRUCK_PLATE" dataType="varchar2" value="TRUCK_PLATE" />
+   <element name="TRAILER_NUMBER" dataType="varchar2" value="TRAILER_NUMBER" />
+   <element name="EARLY_PICKUP_DATE" dataType="varchar2" value="EARLY_PICKUP_DATE" />
+   <element name="LATE_PICKUP_DATE" dataType="varchar2" value="LATE_PICKUP_DATE" />
+   <element name="EARLY_DELIVERY_DATE" dataType="varchar2" value="EARLY_DELIVERY_DATE" />
+   <element name="LATE_DELIVERY_DATE" dataType="varchar2" value="LATE_DELIVERY_DATE" />
+   <element name="STOP_NUM" dataType="varchar2" value="STOP_NUM" />
+   <element name="STOP_TYPE" dataType="varchar2" value="STOP_TYPE" />
+   <element name="APP_LOCATION" dataType="varchar2" value="APP_LOCATION" />
+   <element name="APP_START" dataType="varchar2" value="APP_START" />
+   <element name="APP_END" dataType="varchar2" value="APP_END" />
+   <element name="APP_DOCK" dataType="varchar2" value="APP_DOCK" />
+   <element name="PLANNED_ARRIVAL" dataType="varchar2" value="PLANNED_ARRIVAL" />
+   <element name="LATEST_PICK_DEL_DATE" dataType="varchar2" value="LATEST_PICK_DEL_DATE" />
+
+ </group>
+
+  
+  </dataStructure>
+  </dataTemplate>

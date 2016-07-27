@@ -1,0 +1,79 @@
+<dataTemplate name="AVISO" description="AVISO REPORT">
+ <parameters>
+  <parameter name="P_GL_USER" dataType="character" defaultValue="DBA.ADMIN" /> 
+  <parameter name="P_ROLE_ID" dataType="character" defaultValue="ADMIN" /> 
+  <parameter name="P_DATE_TIME_FORMAT" dataType="character" /> 
+  <parameter name="P_APP_LOC" dataType="character" /> 
+  <parameter name="P_LOC_NAME" dataType="character" />
+  <parameter name="P_SERVPROV" dataType="character" />
+  <parameter name="P_START_TIME_FROM" dataType="character" />
+  <parameter name="P_START_TIME_TO" dataType="character" />
+  <parameter name="P_END_TIME_FROM" dataType="character" />
+  <parameter name="P_END_TIME_TO" dataType="character" />
+  <parameter name="P_REGION" dataType="character" />
+  
+		
+  </parameters>
+  <lexicals /> 
+ <dataQuery>
+  
+  
+ <sqlStatement name="AVISO_MAIN">
+<![CDATA[ 
+
+]]> 
+ </sqlStatement> 
+ 
+ </dataQuery>
+ <dataStructure> 
+ <group name="AVISO_MAIN" dataType="varchar2" source="AVISO_MAIN">
+   <element name="SH_ID" dataType="varchar2" value="SH_ID" /> 
+   <element name="OR_ID" dataType="varchar2" value="OR_ID" />
+   <element name="DISPATCHING_REGION" dataType="varchar2" value="DISPATCHING_REGION" /> 
+   <element name="SOURCE_LOC_ID" dataType="varchar2" value="SOURCE_LOC_ID" /> 
+   <element name="SOURCE_CITY" dataType="varchar2" value="SOURCE_CITY" /> 
+   <element name="SOURCE_COUNTRY" dataType="varchar2" value="SOURCE_COUNTRY" /> 
+   <element name="DEST_LOC_ID" dataType="varchar2" value="DEST_LOC_ID" /> 
+   <element name="DESTINATION_CITY" dataType="varchar2" value="DESTINATION_CITY" />
+   <element name="DESTINATION_COUNTRY" dataType="varchar2" value="DESTINATION_COUNTRY" />    
+   <element name="SERVICE_PROVIDER" dataType="varchar2" value="SERVICE_PROVIDER" /> 
+   <element name="SERVICE_PROVIDER_NAME" dataType="varchar2" value="SERVICE_PROVIDER_NAME" /> 
+   <element name="NUMBER_OF_EUR_EQU_PAL" dataType="varchar2" value="NUMBER_OF_EUR_EQU_PAL" /> 
+   <element name="TRANSPORT_COND" dataType="varchar2" value="TRANSPORT_COND" /> 
+   <element name="SHP_LOC_CATEGORY" dataType="varchar2" value="SHP_LOC_CATEGORY" /> 
+   <element name="MATERIAL" dataType="varchar2" value="MATERIAL" /> 
+   <element name="HAZARDOUS" dataType="varchar2" value="HAZARDOUS" /> 
+   <element name="SERVICE_CRITICAL" dataType="varchar2" value="SERVICE_CRITICAL" />
+   <element name="SPECIAL_ORDER" dataType="varchar2" value="SPECIAL_ORDER" /> 
+   <element name="EXPRESS" dataType="varchar2" value="EXPRESS" /> 
+   <element name="ORLS_INSERT_USER" dataType="varchar2" value="ORLS_INSERT_USER" /> 
+   <element name="SECURE_RES_STATUS" dataType="varchar2" value="SECURE_RES_STATUS" /> 
+   <element name="OR_PO_NUM" dataType="varchar2" value="OR_PO_NUM" /> 
+   <element name="OR_DN_NUM" dataType="varchar2" value="OR_DN_NUM" /> 
+   <element name="SH_PO" dataType="varchar2" value="SH_PO" /> 
+   <element name="SH_DN" dataType="varchar2" value="SH_DN" /> 
+   <element name="TRUCK_PLATE" dataType="varchar2" value="TRUCK_PLATE" /> 
+   <element name="TRAILER_NUMBER" dataType="varchar2" value="TRAILER_NUMBER" /> 
+   <element name="STOP_TYPE" dataType="varchar2" value="STOP_TYPE" /> 
+   <element name="STOP_NUM" dataType="varchar2" value="STOP_NUM" /> 
+   <element name="ORLS_INSERT_DATE" dataType="varchar2" value="ORLS_INSERT_DATE" /> 
+   <element name="SH_INSERT_DATE" dataType="varchar2" value="SH_INSERT_DATE" /> 
+   <element name="LATEST_PICK_DEL_DATE" dataType="varchar2" value="LATEST_PICK_DEL_DATE" /> 
+   <element name="APP_LOCATION" dataType="varchar2" value="APP_LOCATION" /> 
+   <element name="APP_START" dataType="varchar2" value="APP_START" /> 
+   <element name="APP_END" dataType="varchar2" value="APP_END" /> 
+   <element name="APP_DOCK" dataType="varchar2" value="APP_DOCK" /> 
+   <element name="ACTUAL_ARRIVAL" dataType="varchar2" value="ACTUAL_ARRIVAL" /> 
+   <element name="ACTUAL_ARRIVAL_TSP" dataType="varchar2" value="ACTUAL_ARRIVAL_TSP" />
+   <element name="FIRST_STATUS_INSERT_DATE" dataType="varchar2" value="FIRST_STATUS_INSERT_DATE" /> 
+   <element name="REGISTRATION_IN" dataType="varchar2" value="REGISTRATION_IN" /> 
+   <element name="REGISTRATION_OUT" dataType="varchar2" value="REGISTRATION_OUT" /> 
+   <element name="Handling_start" dataType="varchar2" value="Handling_start" />
+   <element name="Handling_end" dataType="varchar2" value="Handling_end" />
+   <element name="DELAY_RC" dataType="varchar2" value="DELAY_RC" /> 
+
+ </group>
+
+  
+  </dataStructure>
+  </dataTemplate>

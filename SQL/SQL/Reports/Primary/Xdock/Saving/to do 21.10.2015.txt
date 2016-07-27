@@ -1,0 +1,4 @@
+- Search direct price based on expiration dates and shipment end time.
+- Find maximum/min price instead of average
+- Add 'No direct price' column
+- if direct price is missing -> check max price on city - city lvl for last 3 months on created shipments

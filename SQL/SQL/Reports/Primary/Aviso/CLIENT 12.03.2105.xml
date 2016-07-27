@@ -1,0 +1,76 @@
+<dataTemplate name="TSP_SUMMARY" description="TSP SUMMARY">
+ <parameters>
+  <parameter name="P_GL_USER" dataType="character" defaultValue="DBA.ADMIN" /> 
+  <parameter name="P_ROLE_ID" dataType="character" defaultValue="ADMIN" /> 
+  <parameter name="P_DATE_TIME_FORMAT" dataType="character" />
+  <parameter name="APP_LOC" dataType="character" />
+		
+  </parameters>
+  <lexicals /> 
+ <dataQuery>
+  
+  
+ <sqlStatement name="Q_TSP_CLAIMED_SPEND_DETAILS">
+<![CDATA[ 
+
+]]> 
+ </sqlStatement> 
+ 
+ </dataQuery>
+ <dataStructure> 
+ <group name="Q_TSP_CLAIMED_SPEND_DETAILS" dataType="varchar2" source="Q_TSP_CLAIMED_SPEND_DETAILS">
+   <element name="SH_ID" dataType="varchar2" value="SH_ID" /> 
+   <element name="OR_ID" dataType="varchar2" value="OR_ID" /> 
+   <element name="SH_START_TIME" dataType="varchar2" value="SH_START_TIME" /> 
+   <element name="SH_END_TIME" dataType="varchar2" value="SH_END_TIME" /> 
+   <element name="RELEASE_ATTR" dataType="varchar2" value="RELEASE_ATTR" /> 
+   <element name="OR_INDICATOR" dataType="varchar2" value="OR_INDICATOR" /> 
+   <element name="REGION" dataType="varchar2" value="REGION" /> 
+   <element name="SOURCE_LOC_ID" dataType="varchar2" value="SOURCE_LOC_ID" /> 
+   <element name="SOURCE_CITY" dataType="varchar2" value="SOURCE_CITY" /> 
+   <element name="SOURCE_NAME" dataType="varchar2" value="SOURCE_NAME" /> 
+   <element name="DEST_LOC_ID" dataType="varchar2" value="DEST_LOC_ID" /> 
+   <element name="DESTINATION_CITY" dataType="varchar2" value="DESTINATION_CITY" /> 
+   <element name="DEST_NAME" dataType="varchar2" value="DEST_NAME" /> 
+   <element name="SERVICE_PROVIDER" dataType="varchar2" value="SERVICE_PROVIDER" /> 
+   <element name="SERVICE_PROVIDER_NAME" dataType="varchar2" value="SERVICE_PROVIDER_NAME" /> 
+   <element name="TRANSPORT_HANDLING_UNIT" dataType="varchar2" value="TRANSPORT_HANDLING_UNIT" /> 
+   <element name="NUMBER_OF_PALLETS" dataType="varchar2" value="NUMBER_OF_PALLETS" /> 
+   <element name="OR_GROSS_WEIGHT" dataType="varchar2" value="OR_GROSS_WEIGHT" /> 
+   <element name="TRANSPORT_COND" dataType="varchar2" value="TRANSPORT_COND" /> 
+   <element name="CATEGORY" dataType="varchar2" value="CATEGORY" /> 
+   <element name="HAZARDOUS" dataType="varchar2" value="HAZARDOUS" /> 
+   <element name="SPECIAL_ORDER" dataType="varchar2" value="SPECIAL_ORDER" /> 
+   <element name="STAND_TRAILER" dataType="varchar2" value="STAND_TRAILER" /> 
+   <element name="EXPRESS" dataType="varchar2" value="EXPRESS" /> 
+   <element name="INCOTERM" dataType="varchar2" value="INCOTERM" /> 
+   <element name="INCOTERM" dataType="varchar2" value="INCOTERM" /> 
+   <element name="STATUS" dataType="varchar2" value="STATUS" /> 
+   <element name="orls_INSERT_USER" dataType="varchar2" value="orls_INSERT_USER" /> 
+   <element name="orls_DOMAIN_NAME" dataType="varchar2" value="orls_DOMAIN_NAME" />
+   <element name="SH_INDICATOR" dataType="varchar2" value="SH_INDICATOR" />
+   <element name="SECURE_RES_STATUS" dataType="varchar2" value="SECURE_RES_STATUS" />
+   <element name="OR_PO_NUM" dataType="varchar2" value="OR_PO_NUM" />
+   <element name="OR_DN_NUM" dataType="varchar2" value="OR_DN_NUM" />
+   <element name="SH_PO" dataType="varchar2" value="SH_PO" />
+   <element name="SH_DN" dataType="varchar2" value="SH_DN" />
+   <element name="TRUCK_PLATE" dataType="varchar2" value="TRUCK_PLATE" />
+   <element name="TRAILER_NUMBER" dataType="varchar2" value="TRAILER_NUMBER" />
+   <element name="EARLY_PICKUP_DATE" dataType="varchar2" value="EARLY_PICKUP_DATE" />
+   <element name="LATE_PICKUP_DATE" dataType="varchar2" value="LATE_PICKUP_DATE" />
+   <element name="EARLY_DELIVERY_DATE" dataType="varchar2" value="EARLY_DELIVERY_DATE" />
+   <element name="LATE_DELIVERY_DATE" dataType="varchar2" value="LATE_DELIVERY_DATE" />
+   <element name="STOP_NUM" dataType="varchar2" value="STOP_NUM" />
+   <element name="STOP_TYPE" dataType="varchar2" value="STOP_TYPE" />
+   <element name="APP_LOCATION" dataType="varchar2" value="APP_LOCATION" />
+   <element name="APP_START" dataType="varchar2" value="APP_START" />
+   <element name="APP_END" dataType="varchar2" value="APP_END" />
+   <element name="APP_DOCK" dataType="varchar2" value="APP_DOCK" />
+   <element name="PLANNED_ARRIVAL" dataType="varchar2" value="PLANNED_ARRIVAL" />
+   <element name="LATEST_PICK_DEL_DATE" dataType="varchar2" value="LATEST_PICK_DEL_DATE" />
+
+ </group>
+
+  
+  </dataStructure>
+  </dataTemplate>

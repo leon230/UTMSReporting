@@ -1,0 +1,8 @@
+1. czy jakis or moze zostac w Xdocku dluzej i pojechac na innym HSn iz pojechaly te poprzednie z LEG1 ?
+2. czy jakis or moze jechac przez wiecej niz 1 Xdock ?
+3. jak podzielic stawki direct na rozne legi ordery sh ?
+4. czy jest mozliwe, ze 1 or ma wiecej niz 3 sh ?
+5. jak liczyc ilosc palet ? na of PFS nie jest zawsze, jak to zaokraglac ? Stawki na direct sa za palety EUR. 
+
+
+6. co z OR ktore nie maja wszystkich SH
