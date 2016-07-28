@@ -7,20 +7,11 @@ FROM   shipment_stop ss,
 unilever.ULE_VIEW_EVENT_TRACKER uvt
 
 
-
-
-
-
-
-
-
-
 WHERE
 uvt.shipment_gid = ss.shipment_gid
 AND uvt.stop_num = ss.stop_num
 AND uvt.PRIORITY > 0
 AND uvt.MAX_PRIORITY = 'Y'
-
 
 
 AND EXISTS
