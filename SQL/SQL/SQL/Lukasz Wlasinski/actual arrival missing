@@ -1,0 +1,32 @@
+SELECT ss.shipment_gid,
+       ss.stop_num,
+       To_char(uvt.eventdate, 'YYYY-MM-DD HH24:MI:SS') AS ACTUAL_ARRIVAL,
+       'ULE/PR'                                         AS DOMAIN_NAME
+
+FROM   shipment_stop ss,
+unilever.ULE_VIEW_EVENT_TRACKER uvt
+
+
+
+
+
+
+
+
+
+
+WHERE
+uvt.shipment_gid = ss.shipment_gid
+AND uvt.stop_num = ss.stop_num
+AND uvt.PRIORITY > 0
+AND uvt.MAX_PRIORITY = 'Y'
+
+
+
+AND EXISTS
+(SELECT 1
+FROM ule_view_invoice_status SH_INV
+WHERE SH_INV.missing_actual = 'Y'
+AND SH_INV.shipment_gid = ss.shipment_gid
+
+)
