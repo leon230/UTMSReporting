@@ -1,0 +1,417 @@
+SELECT temp.SOURCE_CITY																														SOURCE_CITY,
+temp.SOURCE_COUNTRY																														SOURCE_COUNTRY,
+temp.SOURCE_LOCATION_GID																									SOURCE_LOC,
+		temp.DEST_LOCATION_GID																									DEST_LOC,
+
+
+		temp.DEST_CITY																															DEST_CITY,
+		temp.DEST_COUNTRY																														DEST_COUNTRY,
+
+
+
+
+		count(TEMP.ORDER_RELEASE_GID) AS 																										NUMBER_OF_OR,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets = '1') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. ''')) num_or_1,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '2') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_2,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '3') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_3,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '4') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_4,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '5') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_5,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '6') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_6,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '7') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_7,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '8') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_8,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '9') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_9,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '10') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_10,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '11') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_11,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '12') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_12,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '13') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_13,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '14') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_14,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '15') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_15,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '16') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_16,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '17') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_17,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '18') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_18,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '19') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_19,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '20') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_20,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '21') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_21,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '22') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_22,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '23') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_23,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '24') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_24,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '25') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_25,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '26') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_26,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '27') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_27,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '28') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_28,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '29') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_29,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '30') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_30,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '31') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_31,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '32') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_32,
+		-- TRIM(TO_CHAR((count(case when (temp.or_pallets= '33') then TEMP.TOTAL_COST_OR_EUR end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	num_or_33,
+
+
+
+		SUM(TEMP.thu) AS 																														sum_thu,
+		SUM(TEMP.or_pallets) AS 																												sum_pfs,
+
+		-- SUM(TEMP.TOTAL_COST_OR_EUR)																												TOTAL_COST_OR_EUR,
+
+
+
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets = '1') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '1') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. ''')) AVG_GROSS_WEIGHT_KG_1,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '2') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '2') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_2,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '3') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '3') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_3,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '4') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '4') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_4,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '5') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '5') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_5,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '6') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '6') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_6,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '7') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '7') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_7,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '8') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '8') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_8,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '9') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '9') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_9,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '10') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '10') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_10,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '11') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '11') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_11,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '12') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '12') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_12,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '13') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '13') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_13,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '14') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '14') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_14,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '15') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '15') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_15,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '16') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '16') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_16,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '17') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '17') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_17,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '18') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '18') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_18,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '19') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '19') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_19,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '20') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '20') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_20,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '21') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '21') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_21,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '22') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '22') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_22,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '23') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '23') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_23,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '24') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '24') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_24,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '25') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '25') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_25,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '26') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '26') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_26,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '27') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '27') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_27,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '28') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '28') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_28,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '29') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '29') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_29,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '30') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '30') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_30,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '31') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '31') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_31,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '32') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '32') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	AVG_GROSS_WEIGHT_KG_32,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '33') then TEMP.TOTAL_GROSS_WEIGHT_KG end)/count(case when (temp.or_pallets = '33') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))	AVG_GROSS_WEIGHT_KG_33,
+
+
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets = '1') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '1') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. ''')) TOTAL_COST_OR_EUR_1,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '2') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '2') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_2,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '3') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '3') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_3,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '4') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '4') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_4,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '5') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '5') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_5,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '6') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '6') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_6,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '7') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '7') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_7,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '8') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '8') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_8,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '9') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '9') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_9,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '10') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '10') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_10,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '11') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '11') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_11,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '12') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '12') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_12,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '13') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '13') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_13,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '14') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '14') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_14,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '15') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '15') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_15,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '16') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '16') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_16,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '17') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '17') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_17,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '18') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '18') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_18,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '19') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '19') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_19,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '20') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '20') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_20,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '21') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '21') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_21,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '22') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '22') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_22,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '23') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '23') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_23,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '24') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '24') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_24,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '25') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '25') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_25,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '26') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '26') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_26,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '27') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '27') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_27,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '28') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '28') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_28,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '29') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '29') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_29,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '30') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '30') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_30,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '31') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '31') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_31,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '32') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '32') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_32,
+		TRIM(TO_CHAR((SUM(case when (temp.or_pallets= '33') then TEMP.TOTAL_COST_OR_EUR end)/count(case when (temp.or_pallets = '33') then TEMP.ORDER_RELEASE_GID end)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))																	TOTAL_COST_OR_EUR_33,
+
+
+		AVG(CASE WHEN TEMP.total_dist_2 <> 0 THEN TEMP.total_dist_2 WHEN TEMP.TOTAL_DISTANCE <> 0 THEN TEMP.TOTAL_DISTANCE
+		else 0 END)																	AVG_DISTANCE,
+		-- AVG(CASE WHEN TEMP.total_dist_2 <> 0 THEN TEMP.total_dist_2 END)																	AVG_DISTANCE2,
+		temp.TRANSPORT_CONDITION																												TRANSPORT_CONDITION,
+		TEMP.IS_SPOT_COSTED																														SPOT,
+		TEMP.EXPRESS																																		EXPRESS,
+
+		TEMP.INTERMODAL																															INTERMODAL,
+		TRIM(TO_CHAR((SUM(TEMP.or_pallets)/count(TEMP.ORDER_RELEASE_GID)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))						AVG_LOADING_SPACE,
+		TEMP.LTL_RR																																LTL_RR,
+		TEMP.CANCELLATION																														CANCELLATION,
+		TEMP.BULK_TRANSPORT																																				BULK_TRANSPORT,
+		TEMP.SOURCE_POSTAL_CODE																																			SOURCE_POSTAL_CODE,
+		TEMP.DEST_POSTAL_CODE																																			DEST_POSTAL_CODE,
+		TEMP.EQUIPMENT_GROUP																																			EQUIPMENT_GROUP,
+		TEMP.SERVPROV_GID																																				SERVPROV_GID
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+FROM
+(SELECT distinct ORLS.ORDER_RELEASE_GID,
+		SOURCE_LOC.COUNTRY_CODE3_GID																												SOURCE_COUNTRY,
+		SH.SHIPMENT_GID,
+		SOURCE_LOC.CITY																																SOURCE_CITY,
+		DEST_LOC.COUNTRY_CODE3_GID																													DEST_COUNTRY,
+		DEST_LOC.CITY																																DEST_CITY,
+		TO_CHAR(ORLS.LATE_DELIVERY_DATE,'MM/YYYY') AS 																								or_late_delivery,
+		NVL(ORLS.SOURCE_LOCATION_GID,'N/A') AS 																										SOURCE_LOCATION_GID,
+		NVL(ORLS.DEST_LOCATION_GID,'N/A') AS 																										DEST_LOCATION_GID,
+		SHR_CONDITION.ORDER_RELEASE_Refnum_Value AS 																								TRANSPORT_CONDITION,
+
+
+		orls.TOTAL_SHIP_UNIT_COUNT																										thu,
+
+
+		-- (TO_NUMBER((case when REGEXP_LIKE(orl_ref_pal.ORDER_RELEASE_REFNUM_VALUE, '[^0-9 \.,]') then '0'
+		-- else
+
+		-- ((TRIM(TO_CHAR(replace(orl_ref_pal.ORDER_RELEASE_REFNUM_VALUE,',','.'),'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))))  end),
+		-- '999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))       																							or_pallets,
+
+		coalesce(floor((TO_NUMBER((case when REGEXP_LIKE(orl_ref_pal.ORDER_RELEASE_REFNUM_VALUE, '[^0-9 \.,]') then '0'
+		else
+
+		((TRIM(TO_CHAR(replace(orl_ref_pal.ORDER_RELEASE_REFNUM_VALUE,',','.'),'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))))  end),
+		'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))),orls.total_ship_unit_count)																		or_pallets,
+
+
+
+
+		(select(SUM(CASE
+				WHEN (alloc_d.COST_CURRENCY_GID = 'EUR' or alloc_d.COST_CURRENCY_GID is null) THEN alloc_d.COST
+				when alloc_d.COST_CURRENCY_GID <> 'EUR' then alloc_d.COST *
+				unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(to_date(ORLS.LATE_DELIVERY_DATE,'DD.MM.YYYY'),alloc_d.COST_CURRENCY_GID,'EUR')
+				END)
+			)
+			from allocation_order_release_d alloc_d
+			where alloc_d.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			and alloc_d.ACCESSORIAL_CODE_GID IS NULL
+			)																																	TOTAL_COST_OR_EUR,
+			-- (select(SUM(CASE
+				-- WHEN (alloc_d.COST_CURRENCY_GID = 'EUR' or alloc_d.COST_CURRENCY_GID is null) THEN alloc_d.COST
+				-- when alloc_d.COST_CURRENCY_GID <> 'EUR' then alloc_d.COST *
+				-- unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(to_date(ORLS.LATE_DELIVERY_DATE,'DD.MM.YYYY'),alloc_d.COST_CURRENCY_GID,'EUR')
+				-- END)
+			-- )
+			-- from allocation_order_release_d alloc_d
+			-- where alloc_d.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			-- and  alloc_d.ACCESSORIAL_CODE_GID LIKE '%FUEL%'
+			-- )																																	TOTAL_COST_FUEL_EUR,
+		-- (SELECT SUM(SH_REF.SHIPMENT_REFNUM_VALUE)
+		-- FROM SHIPMENT_REFNUM SH_REF,
+			-- ORDER_MOVEMENT OM
+		-- WHERE SH_REF.SHIPMENT_GID = OM.SHIPMENT_GID
+		-- AND OM.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		-- AND SH_REF.SHIPMENT_REFNUM_QUAL_GID IN ('ULE.ULE_ROAD_DISTANCE','ULE.ULE_WATER_DISTANCE','ULE.ULE_RAIL_DISTANCE')
+
+		-- )																																		TOTAL_DISTANCE
+		NVL((SELECT
+
+		SUM(
+
+		case when LOADED_DISTANCE_UOM_CODE = 'MI' then SH_TEMP.LOADED_DISTANCE*1.609344 when LOADED_DISTANCE_UOM_CODE = 'KM' THEN SH_TEMP.LOADED_DISTANCE ELSE 0 END)
+		FROM SHIPMENT SH_TEMP,
+			ORDER_MOVEMENT OM
+		WHERE SH_TEMP.SHIPMENT_GID = OM.SHIPMENT_GID
+		AND OM.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID),0)																							TOTAL_DISTANCE,
+
+
+		(
+		(select sh_ref.SHIPMENT_REFNUM_VALUE
+			from shipment_refnum sh_ref
+			where sh_ref.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_ROAD_DISTANCE'
+			and sh_ref.shipment_gid = om.shipment_gid
+
+			) +
+			(select sh_ref.SHIPMENT_REFNUM_VALUE
+			from shipment_refnum sh_ref
+			where sh_ref.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_WATER_DISTANCE'
+			and sh_ref.shipment_gid = om.shipment_gid
+
+			)	+
+			(select sh_ref.SHIPMENT_REFNUM_VALUE
+			from shipment_refnum sh_ref
+			where sh_ref.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_RAIL_DISTANCE'
+			and sh_ref.shipment_gid = om.shipment_gid
+
+			)	)														total_dist_2,
+			CASE WHEN SH.RATE_GEO_GID IS NOT NULL THEN
+				CASE WHEN SH.RATE_GEO_GID LIKE '%LTL%' THEN 'LTL'
+				ELSE 'TL'
+				END
+			ELSE 'N/A'
+			END 																																						LTL_RR,
+			SH.IS_SPOT_COSTED																																			IS_SPOT_COSTED,
+			(SELECT OR_REF.ORDER_RELEASE_REFNUM_VALUE
+		FROM order_release_refnum OR_REF
+		WHERE OR_REF.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		AND OR_REF.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_EXPRESS_BY_CUSTOMER'
+		)																																								EXPRESS,
+		-- CASE WHEN (SELECT count(SH_REF.SHIPMENT_REFNUM_QUAL_GID )
+		-- FROM SHIPMENT_REFNUM SH_REF
+		-- WHERE SH_REF.SHIPMENT_GID = SH.SHIPMENT_GID
+		-- AND SH_REF.SHIPMENT_REFNUM_QUAL_GID IN ('ULE.ULE_WATER_DISTANCE','ULE.ULE_RAIL_DISTANCE')) > 0 THEN 'YES'
+		-- ELSE 'NO'
+		-- END 																																							INTERMODAL,
+
+		(SELECT OR_REF.STATUS_VALUE_GID
+		FROM
+		ORDER_RELEASE_STATUS OR_REF
+		WHERE
+		OR_REF.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		AND OR_REF.STATUS_TYPE_GID = 'ULE.CANCELLED'
+		--and rownum <2
+		)																																								CANCELLATION,
+		(SELECT OR_REF.ORDER_RELEASE_REFNUM_VALUE
+		FROM order_release_refnum OR_REF
+		WHERE OR_REF.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		AND OR_REF.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_BULK'
+		--and rownum <2
+		)																																								BULK_TRANSPORT,
+		SH.SERVPROV_GID																																					SERVPROV_GID,
+		SOURCE_LOC.POSTAL_CODE																																			SOURCE_POSTAL_CODE,
+		DEST_LOC.POSTAL_CODE																																			DEST_POSTAL_CODE,
+		-- DEST_LOC.location_name																																			dest_location_name,
+		SH.FIRST_EQUIPMENT_GROUP_GID																																	EQUIPMENT_GROUP,
+		(SELECT LISTAGG(XL.LANE_ATTRIBUTE_VALUE,'/') WITHIN GROUP (ORDER BY XL.X_LANE_GID)
+		FROM LANE_ATTRIBUTE XL,
+		RATE_GEO RG_TEMP
+		WHERE RG_TEMP.RATE_GEO_GID = NVL(SH.RATE_GEO_GID,SH.PLANNED_RATE_GEO_GID)
+		AND RG_TEMP.X_LANE_GID = XL.X_LANE_GID
+		AND XL.LANE_ATTRIBUTE_DEF_GID = 'ULE.ULE_TRANSPORT_MODE'
+
+
+		)																																		INTERMODAL,
+		ORLS.TOTAL_WEIGHT_BASE*0.4535923744953094 AS 										TOTAL_GROSS_WEIGHT_KG
+
+
+
+
+
+
+
+FROM ORDER_RELEASE ORLS,
+
+		ORDER_RELEASE SH_CONDITION
+		LEFT OUTER JOIN ORDER_RELEASE_REFNUM SHR_CONDITION ON (SHR_CONDITION.ORDER_RELEASE_GID = SH_CONDITION.ORDER_RELEASE_GID
+		AND ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_TRANSPORT_CONDITION'),
+		LOCATION SOURCE_LOC,
+		LOCATION DEST_LOC,
+	order_release orls_pal
+	left outer join order_release_refnum orl_ref_pal on (orls_pal.order_release_gid = orl_ref_pal.order_release_gid and
+	orl_ref_pal.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_ORIGINAL_PFS'),
+	order_movement om,
+	shipment sh
+WHERE
+SH_CONDITION.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+and sh.shipment_gid = om.shipment_gid
+AND  orls_pal.order_release_gid = ORLS.order_release_gid
+AND	SOURCE_LOC.LOCATION_GID = ORLS.SOURCE_LOCATION_GID
+AND	DEST_LOC.LOCATION_GID = ORLS.DEST_LOCATION_GID
+and om.order_release_gid = orls.order_release_gid
+AND	ORLS.DOMAIN_NAME in ('ULE/PR','ULE')
+and DEST_LOC.location_name not like 'CHEP%'
+-- AND	ORLS.SHIPMENT_TYPE_GID = 'TRANSPORT'
+-- AND	ORLS.SERVPROV_GID NOT IN ('ULE.SPOT')
+-- and ORLS.END_TIME >= to_date(:P_END_DATE_FROM,:P_DATE_TIME_FORMAT)
+-- and
+-- (SUM(TEMP.or_pallets)/count(TEMP.ORDER_RELEASE_GID)) >=20
+
+
+
+
+
+		-- and ORLS.END_TIME <= to_date(:P_END_DATE_TO,:P_DATE_TIME_FORMAT)
+
+		and ORLS.LATE_DELIVERY_DATE >= to_date('2015-03-01','YYYY-MM-DD')
+
+		and ORLS.LATE_DELIVERY_DATE <= to_date('2015-12-31','YYYY-MM-DD')
+		-- AND ORLS.ORDER_RELEASE_GID ='ULE.20150805-0322'
+AND
+		-- (SELECT SH_STATUS.STATUS_VALUE_GID
+		-- FROM
+		-- SHIPMENT_STATUS SH_STATUS
+		-- WHERE
+		-- SH_STATUS.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		-- AND SH_STATUS.STATUS_TYPE_GID = 'ULE/PR.TRANSPORT CANCELLATION'
+		-- )='ULE/PR.NOT CANCELLED'
+		NOT EXISTS
+		(SELECT 1
+		FROM ORDER_RELEASE_REFNUM sh_ref_1
+		WHERE sh_ref_1.ORDER_RELEASE_Refnum_Qual_Gid = 'ULE.ULE_STREAM'
+		   AND sh_ref_1.ORDER_RELEASE_Refnum_Value = 'SECONDARY'
+		   AND sh_ref_1.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID)
+
+
+		and not exists
+		(SELECT ORLS_TEMP.order_release_gid
+			FROM SHIPMENT SH_TEMP,
+			order_movement VORLS_TEMP,
+				ORDER_RELEASE ORLS_TEMP
+
+			WHERE 1=1
+			AND SH_TEMP.SHIPMENT_GID = VORLS_TEMP.SHIPMENT_GID
+			AND ORLS_TEMP.ORDER_RELEASE_GID = VORLS_TEMP.ORDER_RELEASE_GID
+			AND ORLS_TEMP.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			AND SH_TEMP.SHIPMENT_TYPE_GID = 'HANDLING'
+
+			)
+		and exists
+		(select 1
+		from order_movement om,
+				SHIPMENT SH_TEMP
+		where om.order_release_gid = orls.order_release_gid
+		AND SH_TEMP.SHIPMENT_GID = OM.SHIPMENT_GID
+		AND SH_TEMP.TRANSPORT_MODE_GID = 'LTL')
+
+		-- AND ORLS.SOURCE_LOCATION_GID = 'ULE.V65036'
+		-- AND ORLS.DEST_LOCATION_GID = 'ULE.V189480'
+		and SH.IS_SPOT_COSTED = 'N'
+		--kato-myslowice road-sea
+
+) TEMP
+-- WHERE
+ -- TEMP.LTL_RR <> 'LTL'
+-- AND TEMP.CANCELLATION <> 'ULE.CANCELLED_CANCELLED'
+-- AND TEMP.BULK_TRANSPORT <> 'YES'
+-- AND TEMP.EQUIPMENT_GROUP NOT LIKE '%BARGE%'
+-- AND TEMP.EQUIPMENT_GROUP NOT LIKE '%COASTER%'
+
+
+
+group by
+		temp.SOURCE_COUNTRY,
+		NVL(temp.SOURCE_LOCATION_GID,'N/A'),
+		NVL(temp.DEST_LOCATION_GID,'N/A'),
+		temp.DEST_COUNTRY,
+		temp.SOURCE_CITY,
+		temp.DEST_CITY,
+		temp.TRANSPORT_CONDITION,
+		temp.SOURCE_LOCATION_GID,
+		temp.DEST_LOCATION_GID,
+		TEMP.IS_SPOT_COSTED,
+		TEMP.EXPRESS,
+		TEMP.INTERMODAL,
+		TEMP.LTL_RR,
+		TEMP.CANCELLATION,
+		TEMP.BULK_TRANSPORT,
+		TEMP.SOURCE_POSTAL_CODE,
+		TEMP.DEST_POSTAL_CODE,
+		TEMP.EQUIPMENT_GROUP,
+		TEMP.SERVPROV_GID
+
+
+--WAGA DLA KAZDEGO PRZEDZIALU PALETOWEGO
+
+
+
+
+

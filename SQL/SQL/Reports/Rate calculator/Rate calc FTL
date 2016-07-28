@@ -1,0 +1,328 @@
+SELECT temp.SOURCE_CITY																														SOURCE_CITY,
+temp.SOURCE_COUNTRY																														SOURCE_COUNTRY,
+temp.SOURCE_LOCATION_GID																									SOURCE_LOC,
+		temp.DEST_LOCATION_GID																									DEST_LOC,
+
+
+		temp.DEST_CITY																															DEST_CITY,
+		temp.DEST_COUNTRY																														DEST_COUNTRY,
+
+
+
+
+		count(TEMP.ORDER_RELEASE_GID) AS 																										NUMBER_OF_OR,
+		SUM(TEMP.thu) AS 																														sum_thu,
+		SUM(TEMP.or_pallets) AS 																												sum_pfs,
+		SUM(TEMP.TOTAL_COST_OR_EUR)																												TOTAL_COST_OR_EUR,
+		SUM(TEMP.TOTAL_COST_FUEL_EUR)																												TOTAL_COST_FUEL_EUR,
+		SUM(TEMP.TOTAL_COST_ACC_EUR)																												TOTAL_COST_ACC_EUR,
+
+
+
+		AVG(CASE WHEN TEMP.total_dist_2 <> 0 THEN TEMP.total_dist_2 WHEN TEMP.TOTAL_DISTANCE <> 0 THEN TEMP.TOTAL_DISTANCE
+		else 0 END)																	AVG_DISTANCE,
+		-- AVG(CASE WHEN TEMP.total_dist_2 <> 0 THEN TEMP.total_dist_2 END)																	AVG_DISTANCE2,
+		temp.TRANSPORT_CONDITION																												TRANSPORT_CONDITION,
+		TEMP.IS_SPOT_COSTED																														SPOT,
+		TEMP.EXPRESS																																		EXPRESS,
+
+		TEMP.INTERMODAL																															INTERMODAL,
+		TRIM(TO_CHAR((SUM(TEMP.or_pallets)/count(TEMP.ORDER_RELEASE_GID)),'999999999D99','NLS_NUMERIC_CHARACTERS = ''. '''))						AVG_LOADING_SPACE,
+		TEMP.LTL_RR																																LTL_RR,
+		TEMP.CANCELLATION																														CANCELLATION,
+		TEMP.BULK_TRANSPORT																																				BULK_TRANSPORT,
+		TEMP.SOURCE_POSTAL_CODE																																			SOURCE_POSTAL_CODE,
+		TEMP.DEST_POSTAL_CODE																																			DEST_POSTAL_CODE,
+		TEMP.EQUIPMENT_GROUP																																			EQUIPMENT_GROUP,
+		TEMP.SERVPROV_GID																																				SERVPROV_GID,
+		TEMP.tsp_name																																				servprov_name
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+FROM
+(SELECT distinct ORLS.ORDER_RELEASE_GID,
+		SOURCE_LOC.COUNTRY_CODE3_GID																												SOURCE_COUNTRY,
+		SH.SHIPMENT_GID,
+		SOURCE_LOC.CITY																																SOURCE_CITY,
+		DEST_LOC.COUNTRY_CODE3_GID																													DEST_COUNTRY,
+		DEST_LOC.CITY																																DEST_CITY,
+		TO_CHAR(ORLS.LATE_DELIVERY_DATE,'MM/YYYY') AS 																								or_late_delivery,
+		NVL(ORLS.SOURCE_LOCATION_GID,'N/A') AS 																										SOURCE_LOCATION_GID,
+		NVL(ORLS.DEST_LOCATION_GID,'N/A') AS 																										DEST_LOCATION_GID,
+		SHR_CONDITION.ORDER_RELEASE_Refnum_Value AS 																								TRANSPORT_CONDITION,
+
+
+		orls.TOTAL_SHIP_UNIT_COUNT																										thu,
+
+
+		(TO_NUMBER((case when REGEXP_LIKE(orl_ref_pal.ORDER_RELEASE_REFNUM_VALUE, '[^0-9 \.,]') then '0'
+		else
+
+		((TRIM(TO_CHAR(replace(orl_ref_pal.ORDER_RELEASE_REFNUM_VALUE,',','.'),'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))))  end),
+		'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))       																							or_pallets,
+
+
+		(select(SUM(CASE
+				WHEN (alloc_d.COST_CURRENCY_GID = 'EUR' or alloc_d.COST_CURRENCY_GID is null) THEN alloc_d.COST
+				when alloc_d.COST_CURRENCY_GID <> 'EUR' then alloc_d.COST *
+				unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(to_date(ORLS.LATE_DELIVERY_DATE,'DD.MM.YYYY'),alloc_d.COST_CURRENCY_GID,'EUR')
+				END)
+			)
+			from allocation_order_release_d alloc_d
+			where alloc_d.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			and alloc_d.ACCESSORIAL_CODE_GID IS NULL
+			and ALLOC_D.COST_DESCRIPTION = 'B'
+			)																																	TOTAL_COST_OR_EUR,
+			(select(SUM(CASE
+				WHEN (alloc_d.COST_CURRENCY_GID = 'EUR' or alloc_d.COST_CURRENCY_GID is null) THEN alloc_d.COST
+				when alloc_d.COST_CURRENCY_GID <> 'EUR' then alloc_d.COST *
+				unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(to_date(ORLS.LATE_DELIVERY_DATE,'DD.MM.YYYY'),alloc_d.COST_CURRENCY_GID,'EUR')
+				END)
+			)
+			from allocation_order_release_d alloc_d
+			where alloc_d.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			and  alloc_d.ACCESSORIAL_CODE_GID LIKE '%FUEL%'
+			)																																	TOTAL_COST_FUEL_EUR,
+			(select(SUM(CASE
+				WHEN (alloc_d.COST_CURRENCY_GID = 'EUR' or alloc_d.COST_CURRENCY_GID is null) THEN alloc_d.COST
+				when alloc_d.COST_CURRENCY_GID <> 'EUR' then alloc_d.COST *
+				unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(to_date(ORLS.LATE_DELIVERY_DATE,'DD.MM.YYYY'),alloc_d.COST_CURRENCY_GID,'EUR')
+				END)
+			)
+			from allocation_order_release_d alloc_d
+			where alloc_d.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			and  ALLOC_D.COST_DESCRIPTION = 'A'
+			and  alloc_d.ACCESSORIAL_CODE_GID NOT LIKE '%FUEL%'
+			)																																	TOTAL_COST_ACC_EUR,
+		-- (SELECT SUM(SH_REF.SHIPMENT_REFNUM_VALUE)
+		-- FROM SHIPMENT_REFNUM SH_REF,
+			-- ORDER_MOVEMENT OM
+		-- WHERE SH_REF.SHIPMENT_GID = OM.SHIPMENT_GID
+		-- AND OM.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		-- AND SH_REF.SHIPMENT_REFNUM_QUAL_GID IN ('ULE.ULE_ROAD_DISTANCE','ULE.ULE_WATER_DISTANCE','ULE.ULE_RAIL_DISTANCE')
+
+		-- )																																		TOTAL_DISTANCE
+		NVL((SELECT
+
+		SUM(
+
+		case when LOADED_DISTANCE_UOM_CODE = 'MI' then SH_TEMP.LOADED_DISTANCE*1.609344 when LOADED_DISTANCE_UOM_CODE = 'KM' THEN SH_TEMP.LOADED_DISTANCE ELSE 0 END)
+		FROM SHIPMENT SH_TEMP,
+			ORDER_MOVEMENT OM
+		WHERE SH_TEMP.SHIPMENT_GID = OM.SHIPMENT_GID
+		AND OM.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID),0)																							TOTAL_DISTANCE,
+
+
+		(
+		(select sh_ref.SHIPMENT_REFNUM_VALUE
+			from shipment_refnum sh_ref
+			where sh_ref.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_ROAD_DISTANCE'
+			and sh_ref.shipment_gid = om.shipment_gid
+
+			) +
+			(select sh_ref.SHIPMENT_REFNUM_VALUE
+			from shipment_refnum sh_ref
+			where sh_ref.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_WATER_DISTANCE'
+			and sh_ref.shipment_gid = om.shipment_gid
+
+			)	+
+			(select sh_ref.SHIPMENT_REFNUM_VALUE
+			from shipment_refnum sh_ref
+			where sh_ref.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_RAIL_DISTANCE'
+			and sh_ref.shipment_gid = om.shipment_gid
+
+			)	)														total_dist_2,
+			CASE WHEN SH.RATE_GEO_GID IS NOT NULL THEN
+				CASE WHEN SH.RATE_GEO_GID LIKE '%LTL%' THEN 'LTL'
+				ELSE 'TL'
+				END
+			ELSE 'N/A'
+			END 																																						LTL_RR,
+			SH.IS_SPOT_COSTED																																			IS_SPOT_COSTED,
+			(SELECT OR_REF.ORDER_RELEASE_REFNUM_VALUE
+		FROM order_release_refnum OR_REF
+		WHERE OR_REF.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		AND OR_REF.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_EXPRESS_BY_CUSTOMER'
+		)																																								EXPRESS,
+		-- CASE WHEN (SELECT count(SH_REF.SHIPMENT_REFNUM_QUAL_GID )
+		-- FROM SHIPMENT_REFNUM SH_REF
+		-- WHERE SH_REF.SHIPMENT_GID = SH.SHIPMENT_GID
+		-- AND SH_REF.SHIPMENT_REFNUM_QUAL_GID IN ('ULE.ULE_WATER_DISTANCE','ULE.ULE_RAIL_DISTANCE')) > 0 THEN 'YES'
+		-- ELSE 'NO'
+		-- END 																																							INTERMODAL,
+
+		(SELECT OR_REF.STATUS_VALUE_GID
+		FROM
+		ORDER_RELEASE_STATUS OR_REF
+		WHERE
+		OR_REF.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		AND OR_REF.STATUS_TYPE_GID = 'ULE.CANCELLED'
+		--and rownum <2
+		)																																								CANCELLATION,
+		(SELECT OR_REF.ORDER_RELEASE_REFNUM_VALUE
+		FROM order_release_refnum OR_REF
+		WHERE OR_REF.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		AND OR_REF.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_BULK'
+		--and rownum <2
+		)																																								BULK_TRANSPORT,
+		SH.SERVPROV_GID																																					SERVPROV_GID,
+		(select loc.location_name
+		from location loc
+		where loc.location_gid = sh.servprov_gid
+
+
+		)																																								tsp_name,
+		SOURCE_LOC.POSTAL_CODE																																			SOURCE_POSTAL_CODE,
+		DEST_LOC.POSTAL_CODE																																			DEST_POSTAL_CODE,
+		-- DEST_LOC.location_name																																			dest_location_name,
+		SH.FIRST_EQUIPMENT_GROUP_GID																																	EQUIPMENT_GROUP,
+		(SELECT LISTAGG(XL.LANE_ATTRIBUTE_VALUE,'/') WITHIN GROUP (ORDER BY XL.X_LANE_GID)
+		FROM LANE_ATTRIBUTE XL,
+		RATE_GEO RG_TEMP
+		WHERE RG_TEMP.RATE_GEO_GID = NVL(SH.RATE_GEO_GID,SH.PLANNED_RATE_GEO_GID)
+		AND RG_TEMP.X_LANE_GID = XL.X_LANE_GID
+		AND XL.LANE_ATTRIBUTE_DEF_GID = 'ULE.ULE_TRANSPORT_MODE'
+
+
+		)																																		INTERMODAL
+
+
+
+
+
+
+
+FROM ORDER_RELEASE ORLS,
+
+		ORDER_RELEASE SH_CONDITION
+		LEFT OUTER JOIN ORDER_RELEASE_REFNUM SHR_CONDITION ON (SHR_CONDITION.ORDER_RELEASE_GID = SH_CONDITION.ORDER_RELEASE_GID
+		AND ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_TRANSPORT_CONDITION'),
+		LOCATION SOURCE_LOC,
+		LOCATION DEST_LOC,
+	order_release orls_pal
+	left outer join order_release_refnum orl_ref_pal on (orls_pal.order_release_gid = orl_ref_pal.order_release_gid and
+	orl_ref_pal.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_ORIGINAL_PFS'),
+	order_movement om,
+	shipment sh
+WHERE
+SH_CONDITION.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+and sh.shipment_gid = om.shipment_gid
+AND  orls_pal.order_release_gid = ORLS.order_release_gid
+AND	SOURCE_LOC.LOCATION_GID = ORLS.SOURCE_LOCATION_GID
+AND	DEST_LOC.LOCATION_GID = ORLS.DEST_LOCATION_GID
+and om.order_release_gid = orls.order_release_gid
+AND	ORLS.DOMAIN_NAME in ('ULE/PR','ULE')
+and DEST_LOC.location_name not like 'CHEP%'
+-- AND	ORLS.SHIPMENT_TYPE_GID = 'TRANSPORT'
+-- AND	ORLS.SERVPROV_GID NOT IN ('ULE.SPOT')
+-- and ORLS.END_TIME >= to_date(:P_END_DATE_FROM,:P_DATE_TIME_FORMAT)
+-- and
+-- (SUM(TEMP.or_pallets)/count(TEMP.ORDER_RELEASE_GID)) >=20
+
+
+
+
+
+		-- and ORLS.END_TIME <= to_date(:P_END_DATE_TO,:P_DATE_TIME_FORMAT)
+
+		and ORLS.LATE_DELIVERY_DATE >= to_date('2016-01-01','YYYY-MM-DD')
+
+		and ORLS.LATE_DELIVERY_DATE < to_date('2016-04-01','YYYY-MM-DD')
+		-- AND ORLS.ORDER_RELEASE_GID ='ULE.20150805-0322'
+AND
+		-- (SELECT SH_STATUS.STATUS_VALUE_GID
+		-- FROM
+		-- SHIPMENT_STATUS SH_STATUS
+		-- WHERE
+		-- SH_STATUS.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID
+		-- AND SH_STATUS.STATUS_TYPE_GID = 'ULE/PR.TRANSPORT CANCELLATION'
+		-- )='ULE/PR.NOT CANCELLED'
+		NOT EXISTS
+		(SELECT 1
+		FROM ORDER_RELEASE_REFNUM sh_ref_1
+		WHERE sh_ref_1.ORDER_RELEASE_Refnum_Qual_Gid = 'ULE.ULE_STREAM'
+		   AND sh_ref_1.ORDER_RELEASE_Refnum_Value = 'SECONDARY'
+		   AND sh_ref_1.ORDER_RELEASE_GID = ORLS.ORDER_RELEASE_GID)
+
+
+		and not exists
+		(SELECT ORLS_TEMP.order_release_gid
+			FROM SHIPMENT SH_TEMP,
+			order_movement VORLS_TEMP,
+				ORDER_RELEASE ORLS_TEMP
+
+			WHERE 1=1
+			AND SH_TEMP.SHIPMENT_GID = VORLS_TEMP.SHIPMENT_GID
+			AND ORLS_TEMP.ORDER_RELEASE_GID = VORLS_TEMP.ORDER_RELEASE_GID
+			AND ORLS_TEMP.ORDER_RELEASE_GID = orls.ORDER_RELEASE_GID
+			AND SH_TEMP.SHIPMENT_TYPE_GID = 'HANDLING'
+
+			)
+		and exists
+		(select 1
+		from order_movement om,
+				SHIPMENT SH_TEMP
+		where om.order_release_gid = orls.order_release_gid
+		AND SH_TEMP.SHIPMENT_GID = OM.SHIPMENT_GID
+		AND SH_TEMP.TRANSPORT_MODE_GID = 'TL')
+
+		-- AND ORLS.SOURCE_LOCATION_GID = 'ULE.V65036'
+		-- AND ORLS.DEST_LOCATION_GID = 'ULE.V189480'
+		and SH.IS_SPOT_COSTED = 'N'
+		--kato-myslowice road-sea
+
+) TEMP
+-- WHERE
+ -- TEMP.LTL_RR <> 'LTL'
+-- AND TEMP.CANCELLATION <> 'ULE.CANCELLED_CANCELLED'
+-- AND TEMP.BULK_TRANSPORT <> 'YES'
+-- AND TEMP.EQUIPMENT_GROUP NOT LIKE '%BARGE%'
+-- AND TEMP.EQUIPMENT_GROUP NOT LIKE '%COASTER%'
+
+
+
+group by
+		temp.SOURCE_COUNTRY,
+		NVL(temp.SOURCE_LOCATION_GID,'N/A'),
+		NVL(temp.DEST_LOCATION_GID,'N/A'),
+		temp.DEST_COUNTRY,
+		temp.SOURCE_CITY,
+		temp.DEST_CITY,
+		temp.TRANSPORT_CONDITION,
+		temp.SOURCE_LOCATION_GID,
+		temp.DEST_LOCATION_GID,
+		TEMP.IS_SPOT_COSTED,
+		TEMP.EXPRESS,
+		TEMP.INTERMODAL,
+		TEMP.LTL_RR,
+		TEMP.CANCELLATION,
+		TEMP.BULK_TRANSPORT,
+		TEMP.SOURCE_POSTAL_CODE,
+		TEMP.DEST_POSTAL_CODE,
+		TEMP.EQUIPMENT_GROUP,
+		TEMP.SERVPROV_GID,
+		temp.tsp_name
+
+-- HAVING SUM(TEMP.or_pallets)/count(TEMP.ORDER_RELEASE_GID) >= 20
+-- AND SUM(TEMP.TOTAL_COST_OR_EUR)	> 0
+
+-- AND count(TEMP.ORDER_RELEASE_GID)>
+-- CASE WHEN temp.SOURCE_LOCATION_GID	= temp.DEST_LOCATION_GID THEN 10
+-- ELSE 0
+-- END
+
+
+
+
+--total cost accessorial
