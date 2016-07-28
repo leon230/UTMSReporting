@@ -441,10 +441,17 @@ AND d_loc.location_gid = sh.dest_location_gid
  (SELECT 1
  FROM shipment_refnum sh_ref
  WHERE sh_ref.shipment_gid = sh.shipment_gid
- AND sh_ref.shipment_refnum_qual_gid = :P_REGION
+ ANd sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL REGION'
+ AND sh_ref.shipment_refnum_value = NVL(:P_REGION,sh_ref.shipment_refnum_value)
  )
 
+AND EXISTS (SELECT 1
+FROM location_refnum loc_ref
+WHERE loc_ref.location_gid = sh.dest_location_gid
+AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
+AND loc_ref.location_refnum_value = NVL(:P_MSO,loc_ref.location_refnum_value)
 
+)
 --AND (SH.START_TIME) >= TO_DATE('2016-02-01','YYYY-MM-DD')
 --AND (SH.START_TIME) < TO_DATE('2016-02-10','YYYY-MM-DD')
  --AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
