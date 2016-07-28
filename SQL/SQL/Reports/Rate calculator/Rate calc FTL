@@ -197,12 +197,6 @@ FROM
 
 		)																																		INTERMODAL
 
-
-
-
-
-
-
 FROM ORDER_RELEASE ORLS,
 
 		ORDER_RELEASE SH_CONDITION
