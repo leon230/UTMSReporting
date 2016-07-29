@@ -118,24 +118,24 @@ AND sh_ref.shipment_refnum_value IN ('BULK')
 AND	sh.shipment_type_gid = 'TRANSPORT'
 
 
-AND  exists
-(SELECT 1
-FROM shipment_stop ss
-,location_refnum lrp
-WHERE
-ss.shipment_gid = sh.shipment_gid
-AND lrp.LOCATION_GID = ss.location_gid
-AND lrp.location_refnum_qual_gid = 'ULE.ULE_SEND_TO_LOGISTAR'
-)
-and EXISTS (SELECT 1
-		FROM
-		SHIPMENT_STATUS SH_STATUS
-		WHERE
-		SH_STATUS.SHIPMENT_GID = SH.SHIPMENT_GID
-		AND SH_STATUS.STATUS_TYPE_GID = 'ULE/PR.TRANSPORT CANCELLATION'
-		AND SH_STATUS.STATUS_VALUE_GID = 'ULE/PR.NOT CANCELLED'
-		)
-
+--AND  exists
+--(SELECT 1
+--FROM shipment_stop ss
+--,location_refnum lrp
+--WHERE
+--ss.shipment_gid = sh.shipment_gid
+--AND lrp.LOCATION_GID = ss.location_gid
+--AND lrp.location_refnum_qual_gid = 'ULE.ULE_SEND_TO_LOGISTAR'
+--)
+--and EXISTS (SELECT 1
+--		FROM
+--		SHIPMENT_STATUS SH_STATUS
+--		WHERE
+--		SH_STATUS.SHIPMENT_GID = SH.SHIPMENT_GID
+--		AND SH_STATUS.STATUS_TYPE_GID = 'ULE/PR.TRANSPORT CANCELLATION'
+--		AND SH_STATUS.STATUS_VALUE_GID <> 'ULE/PR.NOT CANCELLED'
+--		)
+AND SH.SHIPMENT_GID = 'ULE/PR.101915238'
 
 -- AND
 -- (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
