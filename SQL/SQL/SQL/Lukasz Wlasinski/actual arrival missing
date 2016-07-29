@@ -14,10 +14,10 @@ AND uvt.PRIORITY > 0
 AND uvt.MAX_PRIORITY = 'Y'
 AND SS.ACTUAL_ARRIVAL IS NULL
 
-AND NOT EXISTS
+AND EXISTS
 (SELECT 1
 FROM ule_view_invoice_status SH_INV
-WHERE SH_INV.missing_actual = 'N'
+WHERE SH_INV.missing_actual = 'Y'
 AND SH_INV.shipment_gid = ss.shipment_gid
 
 )
