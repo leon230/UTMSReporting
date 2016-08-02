@@ -52,7 +52,7 @@ WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ))																																                                                RECEIVING_MSO
-,CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
+,ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
 to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
 FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -71,7 +71,7 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
 ))
 
-ELSE sh.total_num_reference_units			END																											                        PFS
+ELSE sh.total_num_reference_units			END,0)																											                        PFS
 --,sh.total_num_reference_units	PFS
 
 
@@ -273,7 +273,7 @@ SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_
 
 ((CASE WHEN
 (
-round(((CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
+round(((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
         to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
         FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -292,7 +292,7 @@ round(((CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
 
         ))
 
-        ELSE sh.total_num_reference_units			END	)/
+        ELSE sh.total_num_reference_units			END,0))/
 		(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
 FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -341,7 +341,7 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
      ))),2)) END
 ) THEN
 
-(1-(round(((CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
+(1-(round(((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
             to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
             FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -360,7 +360,7 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
             ))
 
-            ELSE sh.total_num_reference_units			END	)/
+            ELSE sh.total_num_reference_units			END,0))/
     		(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
     FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
