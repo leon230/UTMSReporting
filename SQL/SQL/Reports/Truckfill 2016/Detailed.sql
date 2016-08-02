@@ -1,4 +1,118 @@
+WITH BULK_DATA AS (
+
+SELECT
+sh.shipment_gid
+,sh.source_location_gid
+,sh.dest_location_gid
+--,DECODE(s_eq.equipment_group_gid,'ULE.TANKER-UP TO 33T','TEMPC','ULE.TANKER-UP TO 35T','TEMPC','ULE.TANKER-UP TO 33T MULTICOMPARTMENT','TEMPC',
+--'ULE.13_6M BOX TRAILER-33_26 PAL','TEMPC','AMBIENT')              trans_cond
+,DECODE(sh_ref_tm.shipment_refnum_value,'ROAD-SEA','SINGLE-MODAL','ROAD','SINGLE-MODAL','INTERMODAL') trans_mode
+,s_eq.equipment_group_gid EQUIPMENT
+,ROUND(sh.total_weight_base*0.45359237,0)   weight
+
+FROM shipment sh
+,shipment_refnum sh_ref_reg
+--,shipment_refnum sh_ref_tc
+,shipment_refnum sh_ref_tm
+,shipment_s_equipment_join sh_eq_j
+,s_equipment s_eq
+
+
+WHERE
+sh.shipment_gid = sh_ref_reg.shipment_gid
+--AND sh.shipment_gid = sh_ref_tc.shipment_gid
+AND sh.shipment_gid = sh_ref_tm.shipment_gid
+AND sh_ref_reg.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+AND sh_ref_reg.shipment_refnum_value = 'BULK'
+--AND sh_ref_tc.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_CONDITION'
+AND sh_ref_tm.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_MODE'
+AND sh.shipment_gid = sh_eq_j.shipment_gid
+AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+)
+
+,ROAD_DATA AS (
+SELECT sh.shipment_gid
+,ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
+to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
+
+FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
+
+WHERE egeru.EQUIPMENT_GROUP_GID =
+(SELECT s_eq.equipment_group_gid
+FROM shipment_s_equipment_join sh_eq_j
+,s_equipment s_eq
+WHERE
+sh.shipment_gid = sh_eq_j.shipment_gid
+AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+AND rownum <2
+	)
+
+AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
+
+))
+
+ELSE sh.total_num_reference_units			END,0)	                                                                                        PFS
+
+,(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
+
+ FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
+
+ WHERE egeru.EQUIPMENT_GROUP_GID =
+ (SELECT s_eq.equipment_group_gid
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ AND rownum <2
+ 	)
+
+ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
+
+ )                                                                                                                                          TRUCK_CAPACITY_PFS
+,(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
+
+ FROM EQUIPMENT_GROUP EG
+ WHERE EG.EQUIPMENT_GROUP_GID =
+ (SELECT s_eq.equipment_group_gid
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ AND rownum <2
+ 	)
+ )                                                                                                                                          TRUCK_CAPACITY_WEIGHT
+
+
+
+FROM shipment sh
+
+
+
+)
+
+
+
 SELECT sh.shipment_gid																							SHIPMENT_GID
+--,(select max(weight)
+--from bulk_data bd
+--where sh.source_location_gid = bd.source_location_gid
+--and sh.dest_location_gid = bd.dest_location_gid
+--AND bd.trans_mode = (select DECODE(sh_ref_tm.shipment_refnum_value,'ROAD-SEA','SINGLE-MODAL','ROAD','SINGLE-MODAL','INTERMODAL')
+--                                            FROM shipment_refnum sh_ref_tm
+--                                            WHERE sh_ref_tm.shipment_gid = sh.shipment_gid
+--                                            AND sh_ref_tm.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_MODE')
+--AND bd.equipment =    (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+--                      FROM shipment_s_equipment_join sh_eq_j
+--                      ,s_equipment s_eq
+--                      WHERE
+--                      sh.shipment_gid = sh_eq_j.shipment_gid
+--                      AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+--                      	)
+--
+--)                                                                                                                   MAX_TRUCK_BULK_WEIGHT
+
 ,sh.source_location_gid																							SOURCE_LOCATION_GID
 ,sh.dest_location_gid																							DEST_LOCATION_GID
 ,UPPER(convert(s_loc.city,'US7ASCII','AL32UTF8'))                               								SOURCE_CITY
@@ -59,63 +173,16 @@ WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ))																																                                                RECEIVING_MSO
-,ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-WHERE egeru.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-	)
-
-AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-))
-
-ELSE sh.total_num_reference_units			END,0)																											                        PFS
+,rd.pfs																											                        PFS
 --,sh.total_num_reference_units	PFS
 
 
 ,sh.total_weight_base*0.45359237																																				PALLET_GROSS_WEIGHT_KG
 
 
-,(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
+,rd.truck_capacity_pfs																																								TRUCK_CAPACITY_PFS
 
-FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-WHERE egeru.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-	)
-
-AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-)																																									TRUCK_CAPACITY_PFS
-
-,(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-FROM EQUIPMENT_GROUP EG
-WHERE EG.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-	)
-)																																									TRUCK_CAPACITY_WEIGHT
+,rd.truck_capacity_weight																																					TRUCK_CAPACITY_WEIGHT
 
 ,(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
 FROM shipment_s_equipment_join sh_eq_j
@@ -142,43 +209,7 @@ SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_
 
 
 
-,round(((CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-         to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-         FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-         WHERE egeru.EQUIPMENT_GROUP_GID =
-         (SELECT s_eq.equipment_group_gid
-         FROM shipment_s_equipment_join sh_eq_j
-         ,s_equipment s_eq
-         WHERE
-         sh.shipment_gid = sh_eq_j.shipment_gid
-         AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-         AND rownum <2
-         	)
-
-         AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-         ))
-
-         ELSE sh.total_num_reference_units			END	)/
-		(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-WHERE egeru.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-	)
-
-AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-)),2)																																								PFS_PERC
+,round(((rd.pfs	)/(rd.truck_capacity_pfs)),2)																														PFS_PERC
 
 ,CASE WHEN (round((
 sh.total_weight_base*0.45359237/
@@ -574,8 +605,10 @@ END
 
 
 FROM shipment sh
+,road_data rd
 ,location s_loc
 ,location d_loc
+
 
 WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
@@ -584,6 +617,8 @@ AND d_loc.location_gid = sh.dest_location_gid
  AND TO_CHAR(sh.start_time,'MM') = :P_MONTH
  AND sh.source_location_gid = NVL(:P_SOURCE,sh.source_location_gid)
  AND sh.dest_location_gid = NVL(:P_DEST,sh.dest_location_gid)
+
+ ANd rd.shipment_gid = sh.shipment_gid
 
  AND EXISTS
  (SELECT 1
