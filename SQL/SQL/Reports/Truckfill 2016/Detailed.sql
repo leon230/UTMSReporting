@@ -72,7 +72,33 @@ ELSE sh.total_num_reference_units			END,0)	                                     
  AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
  )                                                                                                                                          TRUCK_CAPACITY_PFS
-,(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
+,
+CASE WHEN
+ (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group (order by sh.shipment_gid)
+           FROM shipment_refnum sh_ref
+           WHERE sh_ref.shipment_gid = sh.shipment_gid
+           AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+           ))) = 'BULK' THEN
+(select max(weight)
+ from bulk_data bd
+ where sh.source_location_gid = bd.source_location_gid
+ and sh.dest_location_gid = bd.dest_location_gid
+ AND bd.trans_mode = (select DECODE(sh_ref_tm.shipment_refnum_value,'ROAD-SEA','SINGLE-MODAL','ROAD','SINGLE-MODAL','INTERMODAL')
+                                             FROM shipment_refnum sh_ref_tm
+                                             WHERE sh_ref_tm.shipment_gid = sh.shipment_gid
+                                             AND sh_ref_tm.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_MODE')
+ AND bd.equipment =    (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+                       FROM shipment_s_equipment_join sh_eq_j
+                       ,s_equipment s_eq
+                       WHERE
+                       sh.shipment_gid = sh_eq_j.shipment_gid
+                       AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+                       	)
+
+ )
+ELSE
+
+(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
 
  FROM EQUIPMENT_GROUP EG
  WHERE EG.EQUIPMENT_GROUP_GID =
@@ -84,7 +110,7 @@ ELSE sh.total_num_reference_units			END,0)	                                     
  AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
  AND rownum <2
  	)
- )                                                                                                                                          TRUCK_CAPACITY_WEIGHT
+ )   END                                                                                                                                        TRUCK_CAPACITY_WEIGHT
 ,nvl(TRIM(
  (SELECT
  SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_d.cost
@@ -110,24 +136,6 @@ FROM shipment sh
 
 
 SELECT sh.shipment_gid																							SHIPMENT_GID
---,(select max(weight)
---from bulk_data bd
---where sh.source_location_gid = bd.source_location_gid
---and sh.dest_location_gid = bd.dest_location_gid
---AND bd.trans_mode = (select DECODE(sh_ref_tm.shipment_refnum_value,'ROAD-SEA','SINGLE-MODAL','ROAD','SINGLE-MODAL','INTERMODAL')
---                                            FROM shipment_refnum sh_ref_tm
---                                            WHERE sh_ref_tm.shipment_gid = sh.shipment_gid
---                                            AND sh_ref_tm.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_MODE')
---AND bd.equipment =    (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
---                      FROM shipment_s_equipment_join sh_eq_j
---                      ,s_equipment s_eq
---                      WHERE
---                      sh.shipment_gid = sh_eq_j.shipment_gid
---                      AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
---                      	)
---
---)                                                                                                                   MAX_TRUCK_BULK_WEIGHT
-
 ,sh.source_location_gid																							SOURCE_LOCATION_GID
 ,sh.dest_location_gid																							DEST_LOCATION_GID
 ,UPPER(convert(s_loc.city,'US7ASCII','AL32UTF8'))                               								SOURCE_CITY
