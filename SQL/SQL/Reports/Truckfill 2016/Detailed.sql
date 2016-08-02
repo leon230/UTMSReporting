@@ -53,6 +53,8 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
 ELSE sh.total_num_reference_units			END,0)	                                                                                        PFS
 
+,sh.total_weight_base*0.45359237                                                                                                            WEIGHT
+
 ,(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
  FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -83,7 +85,20 @@ ELSE sh.total_num_reference_units			END,0)	                                     
  AND rownum <2
  	)
  )                                                                                                                                          TRUCK_CAPACITY_WEIGHT
+,nvl(TRIM(
+ (SELECT
+ SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_d.cost
+ 				when alloc_d.COST_GID <> 'EUR' THEN alloc_d.cost *
+ 				unilever.ebs_procedures_ule.get_quarterly_ex_rate(nvl(sh.start_time,SYSDATE-60),alloc_d.COST_GID,'EUR')
+ 				ELSE 0
+ 				END	)						COST
 
+ 		        FROM shipment_cost alloc_d
+
+                 WHERE alloc_d.SHIPMENT_GID = sh.SHIPMENT_GID
+                 AND alloc_d.IS_WEIGHTED = 'N'
+                 AND alloc_d.COST_TYPE in ('B','A')
+ )),0)                                                                                                                                      TOTAL_COST
 
 
 FROM shipment sh
@@ -177,12 +192,11 @@ AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 --,sh.total_num_reference_units	PFS
 
 
-,sh.total_weight_base*0.45359237																																				PALLET_GROSS_WEIGHT_KG
+,rd.weight																															                        PALLET_GROSS_WEIGHT_KG
 
+,rd.truck_capacity_pfs																																		TRUCK_CAPACITY_PFS
 
-,rd.truck_capacity_pfs																																								TRUCK_CAPACITY_PFS
-
-,rd.truck_capacity_weight																																					TRUCK_CAPACITY_WEIGHT
+,rd.truck_capacity_weight																																	TRUCK_CAPACITY_WEIGHT
 
 ,(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
 FROM shipment_s_equipment_join sh_eq_j
@@ -192,121 +206,20 @@ sh.shipment_gid = sh_eq_j.shipment_gid
 AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
 	)																																								EQUIPMENT_TYPE
 
-,nvl(TRIM(
-(SELECT
-SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_d.cost
-				when alloc_d.COST_GID <> 'EUR' THEN alloc_d.cost *
-				unilever.ebs_procedures_ule.get_quarterly_ex_rate(nvl(sh.start_time,SYSDATE-60),alloc_d.COST_GID,'EUR')
-				ELSE 0
-				END	)						COST
+,rd.total_cost																											                                          TOTAL_COST_EUR
 
-		        FROM shipment_cost alloc_d
+,round(rd.pfs/rd.truck_capacity_pfs,2)																														PFS_PERC
 
-                WHERE alloc_d.SHIPMENT_GID = sh.SHIPMENT_GID
-                AND alloc_d.IS_WEIGHTED = 'N'
-                AND alloc_d.COST_TYPE in ('B','A')
-)),0)																											                                                    TOTAL_COST_EUR
+,CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
+ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END                                                                                                  WEIGHT_PERC
 
 
+,(CASE WHEN (rd.total_cost) < 0 THEN 0 ELSE
+TO_NUMBER(rd.total_cost) END) *
 
-,round(((rd.pfs	)/(rd.truck_capacity_pfs)),2)																														PFS_PERC
-
-,CASE WHEN (round((
-sh.total_weight_base*0.45359237/
-(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-FROM EQUIPMENT_GROUP EG
-WHERE EG.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-))),2)) > 1 THEN 1
-WHEN
-(((sh.total_weight_base*0.45359237)/(
-ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-WHERE egeru.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-	)
-
-AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-))
-
-ELSE sh.total_num_reference_units			END,0)
-)) + (sh.total_weight_base*0.45359237))> ((SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-                                          FROM EQUIPMENT_GROUP EG
-                                          WHERE EG.EQUIPMENT_GROUP_GID =
-                                          (SELECT s_eq.equipment_group_gid
-                                          FROM shipment_s_equipment_join sh_eq_j
-                                          ,s_equipment s_eq
-                                          WHERE
-                                          sh.shipment_gid = sh_eq_j.shipment_gid
-                                          AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-                                          AND rownum <2
-                                          	)
-                                          )) THEN 1
-
-
-ELSE
-(round((
-sh.total_weight_base*0.45359237/
-(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-FROM EQUIPMENT_GROUP EG
-WHERE EG.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-))),2)) END																																								WEIGHT_PERC
-
-
-,(CASE WHEN (
-nvl(TRIM(
-(SELECT
-SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_d.cost
-				WHEN alloc_d.COST_GID <> 'EUR' THEN alloc_d.cost *
-				unilever.ebs_procedures_ule.get_quarterly_ex_rate(nvl(sh.start_time,SYSDATE-60),alloc_d.COST_GID,'EUR')
-				ELSE 0
-				END	)						COST
-                FROM shipment_cost alloc_d
-                WHERE alloc_d.SHIPMENT_GID = sh.SHIPMENT_GID
-		        AND alloc_d.IS_WEIGHTED = 'N'
-		        AND alloc_d.COST_TYPE in ('B','A')
-)),0)) < 0 THEN 0 ELSE
-TO_NUMBER(
-nvl(TRIM(
-(SELECT
-SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_d.cost
-				when alloc_d.COST_GID <> 'EUR' THEN alloc_d.cost *
-				unilever.ebs_procedures_ule.get_quarterly_ex_rate(nvl(sh.start_time,SYSDATE-60),alloc_d.COST_GID,'EUR')
-				ELSE 0
-				END	)						COST
-		        FROM shipment_cost alloc_d
-                WHERE alloc_d.SHIPMENT_GID = sh.SHIPMENT_GID
-                AND alloc_d.IS_WEIGHTED = 'N'
-                AND alloc_d.COST_TYPE in ('B','A')
-)),0)) END) *
-
-(case when (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group (order by sh.shipment_gid)
+(
+case when (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group (order by sh.shipment_gid)
            FROM shipment_refnum sh_ref
            WHERE sh_ref.shipment_gid = sh.shipment_gid
            AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
@@ -314,288 +227,29 @@ SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_
 
 
  then
- ((1-(CASE WHEN (round((
-      sh.total_weight_base*0.45359237/
-      (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-      FROM EQUIPMENT_GROUP EG
-      WHERE EG.EQUIPMENT_GROUP_GID =
-      (SELECT s_eq.equipment_group_gid
-      FROM shipment_s_equipment_join sh_eq_j
-      ,s_equipment s_eq
-      WHERE
-      sh.shipment_gid = sh_eq_j.shipment_gid
-      AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-      AND rownum <2
-      ))),2)) > 1 THEN 1
-      WHEN
-      (((sh.total_weight_base*0.45359237)/(
-      ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-      to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-      FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-      WHERE egeru.EQUIPMENT_GROUP_GID =
-      (SELECT s_eq.equipment_group_gid
-      FROM shipment_s_equipment_join sh_eq_j
-      ,s_equipment s_eq
-      WHERE
-      sh.shipment_gid = sh_eq_j.shipment_gid
-      AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-      AND rownum <2
-      	)
-
-      AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-      ))
-
-      ELSE sh.total_num_reference_units			END,0)
-      )) + (sh.total_weight_base*0.45359237))> ((SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-                                                FROM EQUIPMENT_GROUP EG
-                                                WHERE EG.EQUIPMENT_GROUP_GID =
-                                                (SELECT s_eq.equipment_group_gid
-                                                FROM shipment_s_equipment_join sh_eq_j
-                                                ,s_equipment s_eq
-                                                WHERE
-                                                sh.shipment_gid = sh_eq_j.shipment_gid
-                                                AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-                                                AND rownum <2
-                                                	)
-                                                )) THEN 1
-
-
-      ELSE
-      (round((
-      sh.total_weight_base*0.45359237/
-      (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-      FROM EQUIPMENT_GROUP EG
-      WHERE EG.EQUIPMENT_GROUP_GID =
-      (SELECT s_eq.equipment_group_gid
-      FROM shipment_s_equipment_join sh_eq_j
-      ,s_equipment s_eq
-      WHERE
-      sh.shipment_gid = sh_eq_j.shipment_gid
-      AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-      AND rownum <2
-      ))),2)) END		)
+ ((1-(	CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+        WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
+        ELSE (round((rd.weight/(rd.truck_capacity_weight)),2))	END)
    ))
 
  else
 
 ((CASE WHEN
 (
-round(((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-        to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
+round((
+CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
+ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END
+),2)
+) > round(rd.pfs/rd.truck_capacity_pfs,2)	THEN
 
-        FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-        WHERE egeru.EQUIPMENT_GROUP_GID =
-        (SELECT s_eq.equipment_group_gid
-        FROM shipment_s_equipment_join sh_eq_j
-        ,s_equipment s_eq
-        WHERE
-        sh.shipment_gid = sh_eq_j.shipment_gid
-        AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-        AND rownum <2
-        	)
-
-        AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-        ))
-
-        ELSE sh.total_num_reference_units			END,0))/
-		(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-WHERE egeru.EQUIPMENT_GROUP_GID =
-(SELECT s_eq.equipment_group_gid
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-AND rownum <2
-	)
-
-AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-)),2)
-) > (CASE WHEN (round((
-     sh.total_weight_base*0.45359237/
-     (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-     FROM EQUIPMENT_GROUP EG
-     WHERE EG.EQUIPMENT_GROUP_GID =
-     (SELECT s_eq.equipment_group_gid
-     FROM shipment_s_equipment_join sh_eq_j
-     ,s_equipment s_eq
-     WHERE
-     sh.shipment_gid = sh_eq_j.shipment_gid
-     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-     AND rownum <2
-     ))),2)) > 1 THEN 1
-     WHEN
-     (((sh.total_weight_base*0.45359237)/(
-     ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-     to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-     FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-     WHERE egeru.EQUIPMENT_GROUP_GID =
-     (SELECT s_eq.equipment_group_gid
-     FROM shipment_s_equipment_join sh_eq_j
-     ,s_equipment s_eq
-     WHERE
-     sh.shipment_gid = sh_eq_j.shipment_gid
-     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-     AND rownum <2
-     	)
-
-     AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-     ))
-
-     ELSE sh.total_num_reference_units			END,0)
-     )) + (sh.total_weight_base*0.45359237))> ((SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-                                               FROM EQUIPMENT_GROUP EG
-                                               WHERE EG.EQUIPMENT_GROUP_GID =
-                                               (SELECT s_eq.equipment_group_gid
-                                               FROM shipment_s_equipment_join sh_eq_j
-                                               ,s_equipment s_eq
-                                               WHERE
-                                               sh.shipment_gid = sh_eq_j.shipment_gid
-                                               AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-                                               AND rownum <2
-                                               	)
-                                               )) THEN 1
-
-
-     ELSE
-     (round((
-     sh.total_weight_base*0.45359237/
-     (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-     FROM EQUIPMENT_GROUP EG
-     WHERE EG.EQUIPMENT_GROUP_GID =
-     (SELECT s_eq.equipment_group_gid
-     FROM shipment_s_equipment_join sh_eq_j
-     ,s_equipment s_eq
-     WHERE
-     sh.shipment_gid = sh_eq_j.shipment_gid
-     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-     AND rownum <2
-     ))),2)) END
-) THEN
-
-(1-(round(((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-            to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-            FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-            WHERE egeru.EQUIPMENT_GROUP_GID =
-            (SELECT s_eq.equipment_group_gid
-            FROM shipment_s_equipment_join sh_eq_j
-            ,s_equipment s_eq
-            WHERE
-            sh.shipment_gid = sh_eq_j.shipment_gid
-            AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-            AND rownum <2
-            	)
-
-            AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-            ))
-
-            ELSE sh.total_num_reference_units			END,0))/
-    		(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-    FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-    WHERE egeru.EQUIPMENT_GROUP_GID =
-    (SELECT s_eq.equipment_group_gid
-    FROM shipment_s_equipment_join sh_eq_j
-    ,s_equipment s_eq
-    WHERE
-    sh.shipment_gid = sh_eq_j.shipment_gid
-    AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-    AND rownum <2
-    	)
-
-    AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-    )),2)))
+(1-(round(( CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+                                                        WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
+                                                        ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END
+                                                        ),2)))
 
 ELSE
- (1-(CASE WHEN (round((
-     sh.total_weight_base*0.45359237/
-     (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-     FROM EQUIPMENT_GROUP EG
-     WHERE EG.EQUIPMENT_GROUP_GID =
-     (SELECT s_eq.equipment_group_gid
-     FROM shipment_s_equipment_join sh_eq_j
-     ,s_equipment s_eq
-     WHERE
-     sh.shipment_gid = sh_eq_j.shipment_gid
-     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-     AND rownum <2
-     ))),2)) > 1 THEN 1
-     WHEN
-     (((sh.total_weight_base*0.45359237)/(
-     ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
-     to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
-
-     FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
-     WHERE egeru.EQUIPMENT_GROUP_GID =
-     (SELECT s_eq.equipment_group_gid
-     FROM shipment_s_equipment_join sh_eq_j
-     ,s_equipment s_eq
-     WHERE
-     sh.shipment_gid = sh_eq_j.shipment_gid
-     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-     AND rownum <2
-     	)
-
-     AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
-     ))
-
-     ELSE sh.total_num_reference_units			END,0)
-     )) + (sh.total_weight_base*0.45359237))> ((SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-                                               FROM EQUIPMENT_GROUP EG
-                                               WHERE EG.EQUIPMENT_GROUP_GID =
-                                               (SELECT s_eq.equipment_group_gid
-                                               FROM shipment_s_equipment_join sh_eq_j
-                                               ,s_equipment s_eq
-                                               WHERE
-                                               sh.shipment_gid = sh_eq_j.shipment_gid
-                                               AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-                                               AND rownum <2
-                                               	)
-                                               )) THEN 1
-
-
-     ELSE
-     (round((
-     sh.total_weight_base*0.45359237/
-     (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
-
-     FROM EQUIPMENT_GROUP EG
-     WHERE EG.EQUIPMENT_GROUP_GID =
-     (SELECT s_eq.equipment_group_gid
-     FROM shipment_s_equipment_join sh_eq_j
-     ,s_equipment s_eq
-     WHERE
-     sh.shipment_gid = sh_eq_j.shipment_gid
-     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-     AND rownum <2
-     ))),2)) END		)
+ (1-(round(rd.pfs/rd.truck_capacity_pfs,2)		)
  )
 
 END
