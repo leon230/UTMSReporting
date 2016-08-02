@@ -4,27 +4,21 @@ SELECT
 sh.shipment_gid
 ,sh.source_location_gid
 ,sh.dest_location_gid
---,DECODE(s_eq.equipment_group_gid,'ULE.TANKER-UP TO 33T','TEMPC','ULE.TANKER-UP TO 35T','TEMPC','ULE.TANKER-UP TO 33T MULTICOMPARTMENT','TEMPC',
---'ULE.13_6M BOX TRAILER-33_26 PAL','TEMPC','AMBIENT')              trans_cond
 ,DECODE(sh_ref_tm.shipment_refnum_value,'ROAD-SEA','SINGLE-MODAL','ROAD','SINGLE-MODAL','INTERMODAL') trans_mode
 ,s_eq.equipment_group_gid EQUIPMENT
 ,ROUND(sh.total_weight_base*0.45359237,0)   weight
 
 FROM shipment sh
 ,shipment_refnum sh_ref_reg
---,shipment_refnum sh_ref_tc
 ,shipment_refnum sh_ref_tm
 ,shipment_s_equipment_join sh_eq_j
 ,s_equipment s_eq
 
-
 WHERE
 sh.shipment_gid = sh_ref_reg.shipment_gid
---AND sh.shipment_gid = sh_ref_tc.shipment_gid
 AND sh.shipment_gid = sh_ref_tm.shipment_gid
 AND sh_ref_reg.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
 AND sh_ref_reg.shipment_refnum_value = 'BULK'
---AND sh_ref_tc.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_CONDITION'
 AND sh_ref_tm.shipment_refnum_qual_gid = 'ULE.ULE_TRANSPORT_MODE'
 AND sh.shipment_gid = sh_eq_j.shipment_gid
 AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
@@ -55,7 +49,19 @@ ELSE sh.total_num_reference_units			END,0)	                                     
 
 ,sh.total_weight_base*0.45359237                                                                                                            WEIGHT
 
-,(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
+,
+CASE WHEN
+(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ 	) IN ('ULE.13_6M ISOTHERMAL BOX TRAILER-33_26 PAL','ULE.LTL GENERIC TEMP_C','ULE.13_6M BOX TRAILER-33_26 PAL-A',
+ 	'ULE.13_6M TILT TRAILER-33_26 PAL 28T','ULE.13_6M DOUBLE DECK-REMOV FLOOR-66_52 PAL','ULE.LTL GENERIC AMB','ULE.13_6M TILT TRAILER-33_26 PAL',
+ 	'ULE.13_6M MEGA TRAILER-33_26 PAL','ULE.13_6M TILT TRAILER-34_26 PAL (26T)','ULE.STANDARD_TRAILER_33_2Y','ULE.13_6M BOX TRAILER-33_26 PAL-A_2Y','ULE.13_6M BOX TRAILER-33_26 PAL')
+THEN
+(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS - 500,'/') within group (order by sh.shipment_gid)
 
  FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
 
@@ -71,7 +77,28 @@ ELSE sh.total_num_reference_units			END,0)	                                     
 
  AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
- )                                                                                                                                          TRUCK_CAPACITY_PFS
+ )
+ELSE
+(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
+
+ FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
+
+ WHERE egeru.EQUIPMENT_GROUP_GID =
+ (SELECT s_eq.equipment_group_gid
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ AND rownum <2
+ 	)
+
+ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
+
+ ) END                                                                                                                                      TRUCK_CAPACITY_PFS
+
+
+
 ,
 CASE WHEN
  (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group (order by sh.shipment_gid)
@@ -125,7 +152,13 @@ ELSE
                  AND alloc_d.IS_WEIGHTED = 'N'
                  AND alloc_d.COST_TYPE in ('B','A')
  )),0)                                                                                                                                      TOTAL_COST
-
+,(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ 	)                                                                                                                                       EQUIPMENT
 
 FROM shipment sh
 
@@ -196,9 +229,7 @@ WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ))																																                                                RECEIVING_MSO
-,rd.pfs																											                        PFS
---,sh.total_num_reference_units	PFS
-
+,rd.pfs																											                                            PFS
 
 ,rd.weight																															                        PALLET_GROSS_WEIGHT_KG
 
@@ -206,19 +237,14 @@ AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ,rd.truck_capacity_weight																																	TRUCK_CAPACITY_WEIGHT
 
-,(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-	)																																								EQUIPMENT_TYPE
+,rd.equipment																																				EQUIPMENT_TYPE
 
-,rd.total_cost																											                                          TOTAL_COST_EUR
+,rd.total_cost																											                                    TOTAL_COST_EUR
 
 ,round(rd.pfs/rd.truck_capacity_pfs,2)																														PFS_PERC
 
-,CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+,CASE WHEN rd.equipment in ('ULE.BARGE_AMB_1299_MT','ULE.BARGE_TEMPC_2333_MT','ULE.BARGE_TEMPC_2333_MT','ULE.COASTER_BARGE_AMB_6513_MT','ULE.COASTER_BARGE_TEMPC_6513_MT') THEN 1
+WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
 WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
 ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END                                                                                                  WEIGHT_PERC
 
@@ -235,9 +261,10 @@ case when (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group 
 
 
  then
- ((1-(	CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
-        WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
-        ELSE (round((rd.weight/(rd.truck_capacity_weight)),2))	END)
+ ((1-(CASE WHEN rd.equipment in ('ULE.BARGE_AMB_1299_MT','ULE.BARGE_TEMPC_2333_MT','ULE.BARGE_TEMPC_2333_MT','ULE.COASTER_BARGE_AMB_6513_MT','ULE.COASTER_BARGE_TEMPC_6513_MT') THEN 1
+      WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+      WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
+      ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END)
    ))
 
  else
@@ -245,15 +272,17 @@ case when (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group 
 ((CASE WHEN
 (
 round((
-CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+CASE WHEN rd.equipment in ('ULE.BARGE_AMB_1299_MT','ULE.BARGE_TEMPC_2333_MT','ULE.BARGE_TEMPC_2333_MT','ULE.COASTER_BARGE_AMB_6513_MT','ULE.COASTER_BARGE_TEMPC_6513_MT') THEN 1
+WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
 WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
 ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END
 ),2)
 ) > round(rd.pfs/rd.truck_capacity_pfs,2)	THEN
 
-(1-(round(( CASE WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
-                                                        WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
-                                                        ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END
+(1-(round((CASE WHEN rd.equipment in ('ULE.BARGE_AMB_1299_MT','ULE.BARGE_TEMPC_2333_MT','ULE.BARGE_TEMPC_2333_MT','ULE.COASTER_BARGE_AMB_6513_MT','ULE.COASTER_BARGE_TEMPC_6513_MT') THEN 1
+           WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
+           WHEN (rd.weight/rd.pfs + rd.weight)> (rd.truck_capacity_weight) THEN 1
+           ELSE (round((rd.weight/(rd.truck_capacity_weight)),2)) END
                                                         ),2)))
 
 ELSE
@@ -261,9 +290,7 @@ ELSE
  )
 
 END
-)) END
-
-                                                                                                                                                      )WASTAGE
+)) END)                                                                                                                                                         WASTAGE
 
 
 FROM shipment sh
