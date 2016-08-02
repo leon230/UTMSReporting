@@ -27,7 +27,8 @@ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
 ,ROAD_DATA AS (
 SELECT sh.shipment_gid
 
-,NVL((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
+,NVL(
+NULLIF((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
 to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
 FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -46,11 +47,14 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
 ))
 
-ELSE sh.total_num_reference_units			END,0)),33)	                                                                                        PFS
+ELSE sh.total_num_reference_units			END,0)),0)
 
-,nvl(sh.total_weight_base*0.45359237,1)                                                                                                            WEIGHT
+,33)	                                                                                        PFS
 
-,NVL((CASE WHEN
+,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
+
+,NVL(
+NULLIF((CASE WHEN
 (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
  FROM shipment_s_equipment_join sh_eq_j
  ,s_equipment s_eq
@@ -95,11 +99,13 @@ ELSE
 
  AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
- ) END),33)                                                                                                                                     TRUCK_CAPACITY_PFS
+ ) END),'0')
+ ,33)                                                                                                                                     TRUCK_CAPACITY_PFS
 
 
 
-,NVL((CASE WHEN
+,NVL(
+NULLIF((CASE WHEN
  (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group (order by sh.shipment_gid)
            FROM shipment_refnum sh_ref
            WHERE sh_ref.shipment_gid = sh.shipment_gid
@@ -136,7 +142,8 @@ ELSE
  AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
  AND rownum <2
  	)
- )   END),24000)                                                                                                                                     TRUCK_CAPACITY_WEIGHT
+ )   END),0)
+ ,24000)                                                                                                                                     TRUCK_CAPACITY_WEIGHT
 
 
 ,nvl(TRIM(
