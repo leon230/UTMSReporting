@@ -26,7 +26,8 @@ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
 
 ,ROAD_DATA AS (
 SELECT sh.shipment_gid
-,ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
+
+,NVL((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
 to_number((SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
 FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -45,12 +46,11 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
 ))
 
-ELSE sh.total_num_reference_units			END,0)	                                                                                        PFS
+ELSE sh.total_num_reference_units			END,0)),33)	                                                                                        PFS
 
-,sh.total_weight_base*0.45359237                                                                                                            WEIGHT
+,nvl(sh.total_weight_base*0.45359237,1)                                                                                                            WEIGHT
 
-,
-CASE WHEN
+,NVL((CASE WHEN
 (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
  FROM shipment_s_equipment_join sh_eq_j
  ,s_equipment s_eq
@@ -95,12 +95,11 @@ ELSE
 
  AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
- ) END                                                                                                                                      TRUCK_CAPACITY_PFS
+ ) END),33)                                                                                                                                     TRUCK_CAPACITY_PFS
 
 
 
-,
-CASE WHEN
+,NVL((CASE WHEN
  (UPPER((SELECT listagg(sh_ref.shipment_refnum_value,'/') within group (order by sh.shipment_gid)
            FROM shipment_refnum sh_ref
            WHERE sh_ref.shipment_gid = sh.shipment_gid
@@ -137,7 +136,9 @@ ELSE
  AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
  AND rownum <2
  	)
- )   END                                                                                                                                        TRUCK_CAPACITY_WEIGHT
+ )   END),24000)                                                                                                                                     TRUCK_CAPACITY_WEIGHT
+
+
 ,nvl(TRIM(
  (SELECT
  SUM(case when (alloc_d.COST_GID = 'EUR' OR alloc_d.COST_GID IS null) THEN alloc_d.cost
@@ -360,10 +361,4 @@ and EXISTS (SELECT 1
 
 
 AND
-(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
-FROM shipment_s_equipment_join sh_eq_j
-,s_equipment s_eq
-WHERE
-sh.shipment_gid = sh_eq_j.shipment_gid
-AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
-	) <> 'ULE.UNLIMITED'
+rd.equipment <> 'ULE.UNLIMITED'
