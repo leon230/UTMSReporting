@@ -54,35 +54,7 @@ ELSE sh.total_num_reference_units			END,0)),0)
 ,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
 
 ,NVL(
-NULLIF((CASE WHEN
-(SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
- FROM shipment_s_equipment_join sh_eq_j
- ,s_equipment s_eq
- WHERE
- sh.shipment_gid = sh_eq_j.shipment_gid
- AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
- 	) IN ('ULE.13_6M ISOTHERMAL BOX TRAILER-33_26 PAL','ULE.LTL GENERIC TEMP_C','ULE.13_6M BOX TRAILER-33_26 PAL-A',
- 	'ULE.13_6M TILT TRAILER-33_26 PAL 28T','ULE.13_6M DOUBLE DECK-REMOV FLOOR-66_52 PAL','ULE.LTL GENERIC AMB','ULE.13_6M TILT TRAILER-33_26 PAL',
- 	'ULE.13_6M MEGA TRAILER-33_26 PAL','ULE.13_6M TILT TRAILER-34_26 PAL (26T)','ULE.STANDARD_TRAILER_33_2Y','ULE.13_6M BOX TRAILER-33_26 PAL-A_2Y','ULE.13_6M BOX TRAILER-33_26 PAL')
-THEN
-(SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS - 500,'/') within group (order by sh.shipment_gid)
-
- FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
-
- WHERE egeru.EQUIPMENT_GROUP_GID =
- (SELECT s_eq.equipment_group_gid
- FROM shipment_s_equipment_join sh_eq_j
- ,s_equipment s_eq
- WHERE
- sh.shipment_gid = sh_eq_j.shipment_gid
- AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
- AND rownum <2
- 	)
-
- AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
-
- )
-ELSE
+NULLIF((
 (SELECT listagg(egeru.LIMIT_NUM_REFERENCE_UNITS,'/') within group (order by sh.shipment_gid)
 
  FROM 		EQUIP_GROUP_EQUIP_REF_UNIT  egeru
@@ -99,7 +71,7 @@ ELSE
 
  AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
- ) END),'0')
+ )),'0')
  ,33)                                                                                                                                     TRUCK_CAPACITY_PFS
 
 
@@ -128,6 +100,31 @@ NULLIF((CASE WHEN
                        	)
 
  )
+WHEN
+    (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+     FROM shipment_s_equipment_join sh_eq_j
+     ,s_equipment s_eq
+     WHERE
+     sh.shipment_gid = sh_eq_j.shipment_gid
+     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+        ) IN ('ULE.13_6M ISOTHERMAL BOX TRAILER-33_26 PAL','ULE.LTL GENERIC TEMP_C','ULE.13_6M BOX TRAILER-33_26 PAL-A',
+        'ULE.13_6M TILT TRAILER-33_26 PAL 28T','ULE.13_6M DOUBLE DECK-REMOV FLOOR-66_52 PAL','ULE.LTL GENERIC AMB','ULE.13_6M TILT TRAILER-33_26 PAL',
+        'ULE.13_6M MEGA TRAILER-33_26 PAL','ULE.13_6M TILT TRAILER-34_26 PAL (26T)','ULE.STANDARD_TRAILER_33_2Y','ULE.13_6M BOX TRAILER-33_26 PAL-A_2Y','ULE.13_6M BOX TRAILER-33_26 PAL')
+THEN
+    (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0) - 500
+
+     FROM EQUIPMENT_GROUP EG
+     WHERE EG.EQUIPMENT_GROUP_GID =
+     (SELECT s_eq.equipment_group_gid
+     FROM shipment_s_equipment_join sh_eq_j
+     ,s_equipment s_eq
+     WHERE
+     sh.shipment_gid = sh_eq_j.shipment_gid
+     AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+     AND rownum <2
+     	)
+     )
+
 ELSE
 
 (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
