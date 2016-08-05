@@ -321,7 +321,7 @@ AND 1            =
 
 
 
-ORDER BY 40 desc
+ORDER BY 40,ss.stop_num	 desc
 
 
 
