@@ -48,8 +48,12 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 ))
 
 ELSE sh.total_num_reference_units			END,0)),0)
-
-,33)	                                                                                        PFS
+,TO_NUMBER(NULLIF((SELECT sh_ref.shipment_refnum_value
+               FROM shipment_refnum sh_ref
+               WHERE sh_ref.shipment_gid = sh.shipment_gid
+               AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_ORIGINAL_PFS'
+               ),'0'))
+)	                                                                                        PFS
 
 ,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
 
