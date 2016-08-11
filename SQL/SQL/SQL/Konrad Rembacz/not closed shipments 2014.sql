@@ -12,6 +12,7 @@ AND sh_ref_reg.shipment_gid = sh.shipment_gid
 ,ser_loc.location_name                                                                                  TSP_NAME
 ,TO_CHAR(sh.insert_date,'YYYY-MM-DD')                                                                   SH_INSERT_DATE
 ,TO_CHAR(orls.insert_date,'YYYY-MM-DD')                                                                 OR_INSERT_DATE
+,sh.transport_mode_gid
 ,(SELECT ss.status_value_gid
           FROM shipment_status ss
           WHERE ss.shipment_gid = sh.shipment_gid
@@ -28,7 +29,7 @@ FROM shipment sh
 ,location s_loc
 ,location d_loc
 ,location ser_loc
-,sh.transport_mode_gid
+
 
 
 
