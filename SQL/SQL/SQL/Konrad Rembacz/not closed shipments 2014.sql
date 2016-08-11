@@ -9,7 +9,9 @@ AND sh_ref_reg.shipment_gid = sh.shipment_gid
 ,s_loc.location_name                                                                                    SOURCE_LOC_NAME
 ,d_loc.location_name                                                                                    DEST_LOC_NAME
 ,sh.servprov_gid                                                                                        TSP_ID
-,
+,ser_loc.location_name                                                                                  TSP_NAME
+,TO_CHAR(sh.insert_date,'YYYY-MM-DD')                                                                   SH_INSERT_DATE
+,TO_CHAR(orls.insert_date,'YYYY-MM-DD')                                                                 OR_INSERT_DATE
 
 FROM shipment sh
 ,order_movement om
@@ -25,7 +27,7 @@ sh.shipment_gid = om.shipment_gid
 AND orls.order_release_gid = om.order_release_gid
 AND TO_CHAR(orls.insert_date,'YYYY') = '2014'
 AND s_loc.location_gid = orls.source_location_gid
-AND s_loc.location_gid = orls.dest_location_gid
+AND d_loc.location_gid = orls.dest_location_gid
 AND ser_loc.location_gid = sh.servprov_gid
 
 AND NOT EXISTS
@@ -33,7 +35,7 @@ AND NOT EXISTS
         FROM shipment_status ss
         WHERE ss.shipment_gid = sh.shipment_gid
         AND ss.status_type_gid = 'ULE/PR.SHIPMENT_COST'
-        and SS.status_value_gid <> 'ULE/PR.SC_NO CHANGES ALLOWED'
+        and ss.status_value_gid <> 'ULE/PR.SC_NO CHANGES ALLOWED'
         )
 AND EXISTS (SELECT 1
 		FROM
