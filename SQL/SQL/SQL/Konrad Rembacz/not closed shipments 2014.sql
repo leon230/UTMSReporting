@@ -46,22 +46,45 @@ AND NOT EXISTS
         (SELECT 1
         FROM shipment_status ss
         WHERE ss.shipment_gid = sh.shipment_gid
-        AND ss.status_type_gid = 'ULE.SHIPMENT_COST'
-        and ss.status_value_gid = 'ULE.SC_NO CHANGES ALLOWED'
+        AND ss.status_type_gid = 'UGO.SHIPMENT_COST'
+        and ss.status_value_gid = 'UGO.SC_NO CHANGES ALLOWED'
         )
-AND EXISTS (SELECT 1
+AND NOT EXISTS (SELECT 1
 		FROM
 		shipment_status sh_status
 		WHERE
 		sh_status.shipment_gid = sh.shipment_gid
-		AND sh_status.status_type_gid = 'ULE.TRANSPORT CANCELLATION'
-		AND sh_status.status_value_gid = 'ULE.NOT CANCELLED'
+		AND sh_status.status_type_gid = 'UGO.TRANSPORT CANCELLATION'
+		AND sh_status.status_value_gid = 'UGO.CANCELLED'
 		)
 AND EXISTS (SELECT 1
 		FROM
 		order_release_status or_status
 		WHERE
 		or_status.order_release_gid = orls.order_release_gid
-		AND or_status.status_type_gid = 'ULE.CANCELLED'
-		AND or_status.status_value_gid = 'ULE.CANCELLED_NOT CANCELLED'
+		AND or_status.status_type_gid = 'UGO.CANCELLED'
+		AND or_status.status_value_gid = 'UGO.CANCELLED_NOT CANCELLED'
 		)
+--AND NOT EXISTS
+--        (SELECT 1
+--        FROM shipment_status ss
+--        WHERE ss.shipment_gid = sh.shipment_gid
+--        AND ss.status_type_gid = 'ULE.SHIPMENT_COST'
+--        and ss.status_value_gid = 'ULE.SC_NO CHANGES ALLOWED'
+--        )
+--AND EXISTS (SELECT 1
+--		FROM
+--		shipment_status sh_status
+--		WHERE
+--		sh_status.shipment_gid = sh.shipment_gid
+--		AND sh_status.status_type_gid = 'ULE.TRANSPORT CANCELLATION'
+--		AND sh_status.status_value_gid = 'ULE.NOT CANCELLED'
+--		)
+--AND EXISTS (SELECT 1
+--		FROM
+--		order_release_status or_status
+--		WHERE
+--		or_status.order_release_gid = orls.order_release_gid
+--		AND or_status.status_type_gid = 'ULE.CANCELLED'
+--		AND or_status.status_value_gid = 'ULE.CANCELLED_NOT CANCELLED'
+--		)
