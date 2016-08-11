@@ -48,11 +48,11 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 ))
 
 ELSE sh.total_num_reference_units			END,0)),0)
-,TO_NUMBER(NULLIF((SELECT sh_ref.shipment_refnum_value
+,ROUND(TO_NUMBER(NULLIF((SELECT sh_ref.shipment_refnum_value
                FROM shipment_refnum sh_ref
                WHERE sh_ref.shipment_gid = sh.shipment_gid
                AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_ORIGINAL_PFS'
-               ),'0'))
+               ),'0')))
 )	                                                                                        PFS
 
 ,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
@@ -113,7 +113,8 @@ WHEN
      AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
         ) IN ('ULE.13_6M ISOTHERMAL BOX TRAILER-33_26 PAL','ULE.LTL GENERIC TEMP_C','ULE.13_6M BOX TRAILER-33_26 PAL-A',
         'ULE.13_6M TILT TRAILER-33_26 PAL 28T','ULE.13_6M DOUBLE DECK-REMOV FLOOR-66_52 PAL','ULE.LTL GENERIC AMB','ULE.13_6M TILT TRAILER-33_26 PAL',
-        'ULE.13_6M MEGA TRAILER-33_26 PAL','ULE.13_6M TILT TRAILER-34_26 PAL (26T)','ULE.STANDARD_TRAILER_33_2Y','ULE.13_6M BOX TRAILER-33_26 PAL-A_2Y','ULE.13_6M BOX TRAILER-33_26 PAL')
+        'ULE.13_6M MEGA TRAILER-33_26 PAL','ULE.13_6M TILT TRAILER-34_26 PAL (26T)','ULE.STANDARD_TRAILER_33_2Y','ULE.13_6M BOX TRAILER-33_26 PAL-A_2Y',
+        'ULE.13_6M BOX TRAILER-33_26 PAL','ULE.13_6M CURTAIN SIDE TRAILER-33_26 PAL','ULE.TL GENERIC AMB','ULE.13_6M DOUBLE DECK-REMOV FLOOR-66_52 PAL-A')
 THEN
     (SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0) - 500
 
