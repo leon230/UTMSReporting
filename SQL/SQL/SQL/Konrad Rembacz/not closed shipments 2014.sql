@@ -26,7 +26,7 @@ WHERE
 sh.shipment_gid = om.shipment_gid
 AND orls.order_release_gid = om.order_release_gid
 --AND TO_CHAR(orls.insert_date,'YYYY') = '2014'
-AND orls.insert_date BETWEEN to_date('2014-01-01','YYYY-MM-DD') AND to_date('2014-02-01','YYYY-MM-DD')
+AND orls.insert_date BETWEEN to_date('2014-01-01','YYYY-MM-DD') AND to_date('2015-01-01','YYYY-MM-DD')
 AND s_loc.location_gid = orls.source_location_gid
 AND d_loc.location_gid = orls.dest_location_gid
 AND ser_loc.location_gid = sh.servprov_gid
