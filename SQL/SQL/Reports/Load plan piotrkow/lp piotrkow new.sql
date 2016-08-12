@@ -321,7 +321,7 @@ AND 1            =
 
 
 
-ORDER BY 40,ss.stop_num	 desc
+ORDER BY 40 asc, NVL(rpt_general.f_remove_domain(sh.shipment_gid),'n/a'), ss.stop_num
 
 
 
