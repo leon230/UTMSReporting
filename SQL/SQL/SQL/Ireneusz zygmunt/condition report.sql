@@ -1,7 +1,7 @@
 SELECT SH.SHIPMENT_GID
 ,orls.order_release_gid
-,sh_ref_reg.shipment_refnum_value                                                       or_condition
-,or_ref_reg.order_release_refnum_value                                                       sh_condition
+,sh_ref_reg.shipment_refnum_value                                                       sh_condition
+,or_ref_reg.order_release_refnum_value                                                       or_condition
 ,TO_CHAR(sh_ref_reg.insert_date,'YYYY-MM-DD')                                                                 SH_INSERT_DATE
 ,TO_CHAR(sh_ref_reg.update_date,'YYYY-MM-DD')                                                                 SH_UPDATE_DATE
 ,TO_CHAR(or_ref_reg.insert_date,'YYYY-MM-DD')                                                                 OR_INSERT_DATE
