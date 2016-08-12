@@ -10,10 +10,10 @@ SELECT DISTINCT
     SELECT
       CASE
         WHEN TO_CHAR(From_tz(CAST(ss_2.PLANNED_ARRIVAL AS TIMESTAMP), 'GMT') AT
-          TIME ZONE source_loc.time_zone_gid, 'MM/DD/YYYY') IS NULL
+          TIME ZONE source_loc.time_zone_gid, 'YYYY-MM-DD') IS NULL
         THEN 'n/a'
         ELSE TO_CHAR(From_tz(CAST(ss_2.PLANNED_ARRIVAL AS TIMESTAMP), 'GMT') AT
-          TIME ZONE source_loc.time_zone_gid, 'MM/DD/YYYY')
+          TIME ZONE source_loc.time_zone_gid, 'YYYY-MM-DD')
           END
     FROM
       shipment_stop ss_2
@@ -186,10 +186,10 @@ SELECT DISTINCT
     SELECT
       CASE
         WHEN TO_CHAR(From_tz(CAST(ss_2.PLANNED_ARRIVAL - 2/24 AS TIMESTAMP), 'GMT') AT
-          TIME ZONE source_loc.time_zone_gid, 'MM/DD/YYYY HH24:MI') IS NULL
+          TIME ZONE source_loc.time_zone_gid, 'YYYY-MM-DD HH24:MI') IS NULL
         THEN 'n/a'
         ELSE TO_CHAR(From_tz(CAST(ss_2.PLANNED_ARRIVAL - 2/24 AS TIMESTAMP), 'GMT') AT
-          TIME ZONE source_loc.time_zone_gid, 'MM/DD/YYYY HH24:MI')
+          TIME ZONE source_loc.time_zone_gid, 'YYYY-MM-DD HH24:MI')
           END
     FROM
       shipment_stop ss_2
