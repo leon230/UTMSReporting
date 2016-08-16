@@ -327,16 +327,16 @@ AND d_loc.location_gid = sh.dest_location_gid
  AND sh_ref.shipment_refnum_value = NVL(:P_REGION,sh_ref.shipment_refnum_value)
  )
 
-AND NVL(:P_MSO,(SELECT loc_ref.location_refnum_value
+AND COALESCE(:P_MSO,(SELECT loc_ref.location_refnum_value
                FROM location_refnum loc_ref
                WHERE loc_ref.location_gid = sh.dest_location_gid
                AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
-               )) =
-(SELECT loc_ref.location_refnum_value
+               ),'ALL')) =
+NVL((SELECT loc_ref.location_refnum_value
 FROM location_refnum loc_ref
 WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
-)
+),'ALL')
 --AND (SH.START_TIME) >= TO_DATE('2016-02-01','YYYY-MM-DD')
 --AND (SH.START_TIME) < TO_DATE('2016-02-10','YYYY-MM-DD')
  --AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
