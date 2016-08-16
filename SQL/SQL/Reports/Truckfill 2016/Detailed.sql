@@ -331,7 +331,7 @@ AND COALESCE(:P_MSO,(SELECT loc_ref.location_refnum_value
                FROM location_refnum loc_ref
                WHERE loc_ref.location_gid = sh.dest_location_gid
                AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
-               ),'ALL')) =
+               ),'ALL') =
 NVL((SELECT loc_ref.location_refnum_value
 FROM location_refnum loc_ref
 WHERE loc_ref.location_gid = sh.dest_location_gid
