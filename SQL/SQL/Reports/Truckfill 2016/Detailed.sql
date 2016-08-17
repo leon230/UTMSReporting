@@ -25,7 +25,7 @@ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
 )
 
 ,ROAD_DATA AS (
-SELECT sh.shipment_gid
+SELECT /*+ FULL(sh) leading(sh bd) */ sh.shipment_gid
 
 ,NVL(
 NULLIF((ROUND(CASE WHEN NVL(sh.total_num_reference_units,0) > 33 THEN
@@ -48,13 +48,8 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 ))
 
 ELSE sh.total_num_reference_units			END,0)),0)
-,ROUND(TO_NUMBER(NULLIF((SELECT sh_ref.shipment_refnum_value
-               FROM shipment_refnum sh_ref
-               WHERE sh_ref.shipment_gid = sh.shipment_gid
-               AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_ORIGINAL_PFS'
-               ),'0')))
+    ,33
 )	                                                                                        PFS
-
 ,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
 
 ,NVL(
@@ -172,13 +167,19 @@ ELSE
 
 FROM shipment sh
 
-
+WHERE
+NOT exists
+	(SELECT 1
+		FROM shipment_refnum sh_ref_1
+		WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
+		AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
+		AND sh_ref_1.shipment_gid = SH.shipment_gid)
 
 )
 
 
 
-SELECT sh.shipment_gid																							SHIPMENT_GID
+SELECT /*+  */ sh.shipment_gid																							SHIPMENT_GID
 ,sh.source_location_gid																							SOURCE_LOCATION_GID
 ,sh.dest_location_gid																							DEST_LOCATION_GID
 ,UPPER(convert(s_loc.city,'US7ASCII','AL32UTF8'))                               								SOURCE_CITY
