@@ -232,8 +232,8 @@ FROM
   location dest_loc,
   location carrier_loc
 WHERE
-  orls.ORDER_RELEASE_TYPE_GID            = 'SALES_ORDER'
-AND ss.shipment_gid                      = sh.shipment_gid
+--  orls.ORDER_RELEASE_TYPE_GID            = 'SALES_ORDER'
+ ss.shipment_gid                      = sh.shipment_gid
 AND sh.DOMAIN_NAME                       = 'ULE/PR'
 AND orls.DOMAIN_NAME                     = 'ULE'
 
@@ -252,74 +252,74 @@ AND source_loc.LOCATION_GID              = orls.SOURCE_LOCATION_GID
 AND source_loc.LOCATION_GID <>'ULE.V447382'
 AND dest_loc.LOCATION_GID                = orls.DEST_LOCATION_GID
 AND sh.SERVPROV_GID                      = carrier_loc.location_gid
-AND SS.LOCATION_GID = ORLS.DEST_LOCATION_GID
+--AND SS.LOCATION_GID = ORLS.DEST_LOCATION_GID
 --AND sh.shipment_gid = 'ULE/PR.102090361'
 
-AND ','
-  ||NVL(:P_SHIPMENT_ID,SH.SHIPMENT_XID)
-  ||',' LIKE '%,'
-  ||SH.SHIPMENT_XID
-  ||',%'
-AND ','
-  ||NVL(:P_ORDER_RELEASE_ID,orls.ORDER_RELEASE_XID)
-  ||',' LIKE '%,'
-  ||orls.ORDER_RELEASE_XID
-  ||',%'
+--AND ','
+--  ||NVL(:P_SHIPMENT_ID,SH.SHIPMENT_XID)
+--  ||',' LIKE '%,'
+--  ||SH.SHIPMENT_XID
+--  ||',%'
+--AND ','
+--  ||NVL(:P_ORDER_RELEASE_ID,orls.ORDER_RELEASE_XID)
+--  ||',' LIKE '%,'
+--  ||orls.ORDER_RELEASE_XID
+--  ||',%'
 
-AND CAST(( From_tz(CAST( orls.EARLY_DELIVERY_DATE AS TIMESTAMP), 'GMT') AT TIME
-  ZONE source_loc.time_zone_gid) AS DATE) >=
-  CASE
-    WHEN :EARLY_DELIVERY_TIME_FROM IS NULL
-    THEN CAST((From_tz( CAST( ORLS.EARLY_DELIVERY_DATE AS TIMESTAMP), 'GMT') AT
-      TIME ZONE source_loc.time_zone_gid) AS DATE)
-    ELSE to_date(:EARLY_DELIVERY_TIME_FROM,:P_DATE_TIME_FORMAT)
-  END
-AND CAST((From_tz(CAST( orls.EARLY_DELIVERY_DATE AS TIMESTAMP),'GMT') AT TIME
-  ZONE source_loc.time_zone_gid) AS DATE) <=
-  CASE
-    WHEN :EARLY_DELIVERY_TIME_TO IS NULL
-    THEN CAST((From_tz(CAST( ORLS.EARLY_DELIVERY_DATE AS TIMESTAMP), 'GMT') AT
-      TIME ZONE source_loc.time_zone_gid) AS DATE)
-    ELSE to_date(:EARLY_DELIVERY_TIME_TO,:P_DATE_TIME_FORMAT)
-  END
-AND
-  (
-    source_loc.location_gid = :SOURCE_LOCATION_ID
-  OR dest_loc.location_gid  = :SOURCE_LOCATION_ID
-  )
-AND
-  (
-    (
-      sh.SERVPROV_GID = NVL(:SERVICE_PROVIDER_ID, sh.SERVPROV_GID)
-    )
-  OR
-    (
-      sh.SERVPROV_GID IS NULL
-    )
-  )
-AND ','
-  ||NVL(:BULK_PLAN_ID,rpt_general.f_remove_domain(sh.BULK_PLAN_GID))
-  ||',' LIKE '%,'
-  ||rpt_general.f_remove_domain(sh.BULK_PLAN_GID)
-  ||',%'
+--AND CAST(( From_tz(CAST( orls.EARLY_DELIVERY_DATE AS TIMESTAMP), 'GMT') AT TIME
+--  ZONE source_loc.time_zone_gid) AS DATE) >=
+--  CASE
+--    WHEN :EARLY_DELIVERY_TIME_FROM IS NULL
+--    THEN CAST((From_tz( CAST( ORLS.EARLY_DELIVERY_DATE AS TIMESTAMP), 'GMT') AT
+--      TIME ZONE source_loc.time_zone_gid) AS DATE)
+--    ELSE to_date(:EARLY_DELIVERY_TIME_FROM,:P_DATE_TIME_FORMAT)
+--  END
+--AND CAST((From_tz(CAST( orls.EARLY_DELIVERY_DATE AS TIMESTAMP),'GMT') AT TIME
+--  ZONE source_loc.time_zone_gid) AS DATE) <=
+--  CASE
+--    WHEN :EARLY_DELIVERY_TIME_TO IS NULL
+--    THEN CAST((From_tz(CAST( ORLS.EARLY_DELIVERY_DATE AS TIMESTAMP), 'GMT') AT
+--      TIME ZONE source_loc.time_zone_gid) AS DATE)
+--    ELSE to_date(:EARLY_DELIVERY_TIME_TO,:P_DATE_TIME_FORMAT)
+--  END
+--AND
+--  (
+--    source_loc.location_gid = :SOURCE_LOCATION_ID
+--  OR dest_loc.location_gid  = :SOURCE_LOCATION_ID
+--  )
+--AND
+--  (
+--    (
+--      sh.SERVPROV_GID = NVL(:SERVICE_PROVIDER_ID, sh.SERVPROV_GID)
+--    )
+--  OR
+--    (
+--      sh.SERVPROV_GID IS NULL
+--    )
+--  )
+--AND ','
+--  ||NVL(:BULK_PLAN_ID,rpt_general.f_remove_domain(sh.BULK_PLAN_GID))
+--  ||',' LIKE '%,'
+--  ||rpt_general.f_remove_domain(sh.BULK_PLAN_GID)
+--  ||',%'
 AND ss.STOP_TYPE = 'D'
 
-AND 1            =
-  CASE
-    WHEN :SOURCE_LOCATION_ID      IS NOT NULL
-    AND :EARLY_DELIVERY_TIME_FROM IS NOT NULL
-    AND :EARLY_DELIVERY_TIME_TO   IS NOT NULL
-    THEN 1
-    WHEN :BULK_PLAN_ID IS NOT NULL
-    THEN 1
-    WHEN :P_SHIPMENT_ID IS NOT NULL
-    THEN 1
-    WHEN :P_ORDER_RELEASE_ID IS NOT NULL
-    THEN 1
-    ELSE 0
-  END
+--AND 1            =
+--  CASE
+--    WHEN :SOURCE_LOCATION_ID      IS NOT NULL
+--    AND :EARLY_DELIVERY_TIME_FROM IS NOT NULL
+--    AND :EARLY_DELIVERY_TIME_TO   IS NOT NULL
+--    THEN 1
+--    WHEN :BULK_PLAN_ID IS NOT NULL
+--    THEN 1
+--    WHEN :P_SHIPMENT_ID IS NOT NULL
+--    THEN 1
+--    WHEN :P_ORDER_RELEASE_ID IS NOT NULL
+--    THEN 1
+--    ELSE 0
+--  END
 
-
+AND SH.SHIPMENT_GID = 'ULE/PR.102125755'
 
 ORDER BY 40 asc, NVL(rpt_general.f_remove_domain(sh.shipment_gid),'n/a'), ss.stop_num
 
