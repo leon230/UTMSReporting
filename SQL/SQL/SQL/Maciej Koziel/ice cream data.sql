@@ -12,7 +12,7 @@ SELECT sh.shipment_gid
                FROM shipment_refnum sh_ref
                WHERE sh_ref.shipment_gid = sh.shipment_gid
                 AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_ORIGINAL_PFS'
-                )                                                                                                                           PFS
+                )                                                                                                                          PFS
 ,sh.total_weight_base*0.45359237                                                                                                           WEIGHT
 ,(SELECT round(EG.EFFECTIVE_WEIGHT_BASE*0.45359237,0)
 
