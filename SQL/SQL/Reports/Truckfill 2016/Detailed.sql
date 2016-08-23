@@ -173,13 +173,20 @@ NOT exists
 		FROM shipment_refnum sh_ref_1
 		WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
 		AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
-		AND sh_ref_1.shipment_gid = SH.shipment_gid)
+		AND sh_ref_1.shipment_gid = sh.shipment_gid)
 
+AND (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ 	) <> 'UNLIMITED'
 )
 
 
 
-SELECT /*+  */ sh.shipment_gid																							SHIPMENT_GID
+SELECT /*+ leading(sh) */ sh.shipment_gid																							SHIPMENT_GID
 ,sh.source_location_gid																							SOURCE_LOCATION_GID
 ,sh.dest_location_gid																							DEST_LOCATION_GID
 ,UPPER(convert(s_loc.city,'US7ASCII','AL32UTF8'))                               								SOURCE_CITY
@@ -370,7 +377,4 @@ and EXISTS (SELECT 1
 		)
 
 
-AND
-rd.equipment <> 'ULE.UNLIMITED'
-
-AND SH.SOURCE_LOCATION_GID IN ('ULE.V205315','ULE.V205283','ULE.V205292','ULE.V214488 ','ULE.V50474879  ','ULE.V162314','ULE.V207493')
+--AND SH.SOURCE_LOCATION_GID IN ('ULE.V205315','ULE.V205283','ULE.V205292','ULE.V214488 ','ULE.V50474879 ','ULE.V162314','ULE.V207493')

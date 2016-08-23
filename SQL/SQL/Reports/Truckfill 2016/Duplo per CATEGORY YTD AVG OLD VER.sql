@@ -189,7 +189,13 @@ NOT exists
 		WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
 		AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
 		AND sh_ref_1.shipment_gid = SH.shipment_gid)
-
+AND (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+ FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ 	) <> 'UNLIMITED'
 )
 
 
@@ -366,8 +372,6 @@ and EXISTS (SELECT 1
 		)
 
 
-AND
-rd.equipment <> 'ULE.UNLIMITED'
 
 
 ) temp
