@@ -376,8 +376,9 @@ FROM shipment sh
 WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
- AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
-AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
+ AND TO_CHAR(sh.start_time,'YYYY') = '2016'
+--AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
+AND TO_CHAR(sh.start_time,'MM') in ('01','02')
 
 
  ANd rd.shipment_gid = sh.shipment_gid
@@ -435,7 +436,8 @@ temp.source_city
 )
 
 PIVOT (
-SUM(TOTAL_COST_EUR) AS TOTAL_COST_EUR
+SUM(SHIPMENT_COUNT) AS SHIPMENT_COUNT
+,SUM(TOTAL_COST_EUR) AS TOTAL_COST_EUR
 ,SUM(TOTAL_NUM_PALLETS) AS TOTAL_NUM_PALLETS
 ,SUM(PALLETS_PER_TRUCK) AS PALLETS_PER_TRUCK
 ,SUM(WEIGHT_PER_TRUCK) AS WEIGHT_PER_TRUCK
