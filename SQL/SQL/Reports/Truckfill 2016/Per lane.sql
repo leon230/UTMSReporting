@@ -376,9 +376,10 @@ FROM shipment sh
 WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
- AND TO_CHAR(sh.start_time,'YYYY') = '2016'
+ AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
 --AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
-AND TO_CHAR(sh.start_time,'MM') in ('01','02')
+--AND TO_CHAR(sh.start_time,'MM') in ('01')
+--AND ROWNUM < 2
 
 
  ANd rd.shipment_gid = sh.shipment_gid

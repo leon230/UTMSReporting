@@ -158,12 +158,6 @@ else sh.total_ship_unit_count end,2)																								                    
 
 ,COALESCE(or_pfs_est_u.order_release_refnum_value,or_pfs_est.order_release_refnum_value,orref_pfs_org.order_release_refnum_value,to_char(orl.total_ship_unit_count))					OR_PFS
 
-
-
-
-
-
-
 ,(SELECT SH_STATUS.STATUS_VALUE_GID
 		FROM
 		SHIPMENT_STATUS SH_STATUS
