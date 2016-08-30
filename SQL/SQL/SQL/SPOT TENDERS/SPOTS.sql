@@ -83,7 +83,7 @@ where
  tcs.I_TRANSACTION_NO = tc.I_TRANSACTION_NO
 and tc.shipment_gid = sh.shipment_gid
 and tc.TENDER_TYPE = 'Spot Bid'
-AND SH.shipment_gid = 'ULE/PR.101903846'
+--AND SH.shipment_gid = 'ULE/PR.101903846'
 and tcs.BID_AMOUNT is not null
 -- AND SS.SHIPMENT_GID = SH.SHIPMENT_GID
 -- AND SS.STATUS_TYPE_GID = 'ULE/PR.SECURE RESOURCES'
