@@ -72,7 +72,16 @@ NULLIF((
 
  )),'0')
  ,33)                                                                                                                                     TRUCK_CAPACITY_PFS
-
+,(CASE
+		WHEN (SELECT
+			sh_ref_1.SHIPMENT_REFNUM_VALUE
+		FROM
+			shipment_refnum sh_ref_1
+		WHERE
+			sh.shipment_gid = sh_ref_1.shipment_gid
+			AND sh_ref_1.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_XLS_UPLD_SHIPMENT_REF_NO') is null THEN 'N'
+		ELSE 'Y'
+	END)																																								FLATTO
 
 
 ,NVL(
@@ -247,6 +256,7 @@ WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ))																																                                                RECEIVING_MSO
+rd.flatto                                                                                                                                                   FLATTO
 ,rd.pfs																											                                            PFS
 
 ,rd.weight																															                        PALLET_GROSS_WEIGHT_KG
@@ -320,8 +330,8 @@ FROM shipment sh
 WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
- AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
- AND TO_CHAR(sh.start_time,'MM') = :P_MONTH
+-- AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
+-- AND TO_CHAR(sh.start_time,'MM') = :P_MONTH
  AND sh.source_location_gid = NVL(:P_SOURCE,sh.source_location_gid)
  AND sh.dest_location_gid = NVL(:P_DEST,sh.dest_location_gid)
 
@@ -345,8 +355,8 @@ FROM location_refnum loc_ref
 WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 ),'ALL')
---AND (SH.START_TIME) >= TO_DATE('2016-02-01','YYYY-MM-DD')
---AND (SH.START_TIME) < TO_DATE('2016-02-10','YYYY-MM-DD')
+AND (SH.START_TIME) >= TO_DATE('2016-02-01','YYYY-MM-DD')
+AND (SH.START_TIME) < TO_DATE('2016-05-10','YYYY-MM-DD')
  --AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
 AND NOT exists
 	(SELECT 1

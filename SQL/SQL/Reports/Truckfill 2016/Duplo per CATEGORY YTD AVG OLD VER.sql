@@ -196,6 +196,13 @@ AND (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.ship
  sh.shipment_gid = sh_eq_j.shipment_gid
  AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
  	) <> 'UNLIMITED'
+--ADDITIONAL ONLY FOR CATEGORY
+ AND NOT exists (SELECT 1
+ FROM shipment_refnum sh_ref
+ WHERE sh_ref.shipment_gid = sh.shipment_gid
+ AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+ AND sh_ref.shipment_refnum_value IN ('INBOUND','BULK')
+ )
 )
 
 
