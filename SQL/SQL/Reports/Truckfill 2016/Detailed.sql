@@ -49,7 +49,7 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 
 ELSE sh.total_num_reference_units			END,0)),0)
     ,33
-)	                                                                                        PFS
+)	                                                                                                                                                         PFS
 ,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
 
 ,NVL(
@@ -83,6 +83,13 @@ NULLIF((
 		ELSE 'Y'
 	END)																																								FLATTO
 
+,CASE WHEN (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.shipment_gid)
+    FROM shipment_s_equipment_join sh_eq_j
+ ,s_equipment s_eq
+ WHERE
+ sh.shipment_gid = sh_eq_j.shipment_gid
+ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
+ 	) like '%LTL%' THEN 'LTL' ELSE 'FTL' END 		                                                                                                                    FTL_LTL
 
 ,NVL(
 NULLIF((CASE WHEN
@@ -199,7 +206,9 @@ SELECT /*+ leading(sh) */ sh.shipment_gid																							SHIPMENT_GID
 ,sh.source_location_gid																							SOURCE_LOCATION_GID
 ,sh.dest_location_gid																							DEST_LOCATION_GID
 ,UPPER(convert(s_loc.city,'US7ASCII','AL32UTF8'))                               								SOURCE_CITY
+,UPPER(convert(s_loc.country_code3_gid,'US7ASCII','AL32UTF8'))                               								SOURCE_COUNTRY
 ,UPPER(convert(d_loc.city,'US7ASCII','AL32UTF8'))																DEST_CITY
+,UPPER(convert(d_loc.country_code3_gid,'US7ASCII','AL32UTF8'))																DEST_COUNTRY
 ,sh.source_location_gid||'-'||sh.dest_location_gid																UTMS_KEY
 ,UPPER(convert(s_loc.city,'US7ASCII','AL32UTF8'))||'-'||UPPER(convert(d_loc.city,'US7ASCII','AL32UTF8'))		LANE_NAME
 ,to_char(sh.start_time,'YYYY-MM-DD')																									SH_START_TIME

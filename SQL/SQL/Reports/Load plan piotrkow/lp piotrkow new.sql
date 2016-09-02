@@ -217,7 +217,11 @@ SELECT DISTINCT
   ,''																		as IN_FILE
   ,''																		as Przyczyna_rezerwacji
 
-
+,sh.BULK_PLAN_GID
+,SH.SOURCE_LOCATION_GID
+,SH.DEST_LOCATION_GID
+,ORLS.SOURCE_LOCATION_GID
+,ORLS.DEST_LOCATION_GID
 
 FROM
   SHIPMENT_STOP ss,
@@ -234,8 +238,8 @@ FROM
 WHERE
 --  orls.ORDER_RELEASE_TYPE_GID            = 'SALES_ORDER'
  ss.shipment_gid                      = sh.shipment_gid
-AND sh.DOMAIN_NAME                       = 'ULE/PR'
-AND orls.DOMAIN_NAME                     = 'ULE'
+--AND sh.DOMAIN_NAME                       = 'ULE/PR'
+--AND orls.DOMAIN_NAME                     = 'ULE'
 
 -- AND ssd.SHIPMENT_GID                     = ss.SHIPMENT_GID
 -- AND ssd.stop_num                         = ss.stop_num
@@ -249,10 +253,19 @@ AND or_ref.ORDER_RELEASE_GID             = orls.ORDER_RELEASE_GID
 AND or_ref.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_STREAM'
 AND or_ref.ORDER_RELEASE_REFNUM_VALUE    = 'SECONDARY'
 AND source_loc.LOCATION_GID              = orls.SOURCE_LOCATION_GID
-AND source_loc.LOCATION_GID <> 'ULE.V447382'
+
+--AND sh.source_location_gid = 'ULE.V447382'
+
+--AND 1 =
+--CASE WHEN sh.source_location_gid = 'ULE.V447382' AND SH.SERVPROV_GID = 'ULE.T447382' THEN 1
+--WHEN sh.source_location_gid <> 'ULE.V447382' THEN 1
+--END
+
+
+
 AND dest_loc.LOCATION_GID                = orls.DEST_LOCATION_GID
 AND sh.SERVPROV_GID                      = carrier_loc.location_gid
---AND SS.LOCATION_GID = ORLS.DEST_LOCATION_GID
+AND SS.LOCATION_GID = nvl(orls.PLAN_TO_LOCATION_GID,ORLS.DEST_LOCATION_GID)
 --AND sh.shipment_gid = 'ULE/PR.102090361'
 
 AND ','
@@ -285,7 +298,6 @@ AND CAST((From_tz(CAST( orls.EARLY_DELIVERY_DATE AS TIMESTAMP),'GMT') AT TIME
 AND
   (
     source_loc.location_gid = :SOURCE_LOCATION_ID
-  OR dest_loc.location_gid  = :SOURCE_LOCATION_ID
   )
 AND
   (
@@ -302,6 +314,9 @@ AND ','
   ||',' LIKE '%,'
   ||rpt_general.f_remove_domain(sh.BULK_PLAN_GID)
   ||',%'
+
+
+
 AND ss.STOP_TYPE = 'D'
 
 AND 1            =
