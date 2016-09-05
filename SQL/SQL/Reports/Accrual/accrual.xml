@@ -76,7 +76,7 @@ WHERE SU.order_release_gid = orl.order_release_gid) ship_unit_count,  ----Harshe
                 xl.x_lane_xid LANE_ID,      
                 replace(replace(orl.equipment_group_gid, '&', 'and'), '  ', ' ') SERVICE_ID,
                 orl_po.order_release_refnum_value PO_NUMBER,
-                alloc_base.allocated_cost_currency_gid CURRENCY,
+                alloc.COST_CURRENCY_GID CURRENCY,
                 NVL(epoca_original_stream.order_release_refnum_value,orl_str.order_release_refnum_value) as STREAM,	-- Column modified for CEE Retrofit 05/15/2015	
                 CASE
                     WHEN (orl.order_release_type_gid = 'FINDUS') THEN 'FINDUS' 
@@ -227,7 +227,7 @@ WHERE SU.order_release_gid = orl.order_release_gid) ship_unit_count, --Harshed_O
                 xl.x_lane_xid LANE_ID,      
                 replace(replace(orl.equipment_group_gid, '&', 'and'), '  ', ' ') SERVICE_ID,
                 orl_po.order_release_refnum_value PO_NUMBER,
-                alloc_base.allocated_cost_currency_gid CURRENCY,
+                alloc_line.COST_CURRENCY_GID	 CURRENCY,
                 NVL(epoca_original_stream.order_release_refnum_value,orl_str.order_release_refnum_value) as STREAM, -- Column modified for CEE Retrofit 05/15/2015
                 CASE
                     WHEN (orl.order_release_type_gid = 'FINDUS') THEN 'FINDUS' 

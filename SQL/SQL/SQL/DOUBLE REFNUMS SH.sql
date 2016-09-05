@@ -19,3 +19,15 @@ orls.shipment_gid,
 HAVING 
   orls_ref.shipment_REFNUM_QUAL_GID in ('ULE.ULE_FUNCTIONAL_REGION','ULE.ULE_TRANSPORT_CONDITION','ULE.ULE_SHIPMENT_STREAM','ULE.ULE_ORIGINAL_PFS','ULE.ULE_MATERIAL_TYPE')
   and COUNT(orls_ref.shipment_REFNUM_QUAL_GID) > 1		
+
+
+
+
+
+
+
+
+
+
+
+

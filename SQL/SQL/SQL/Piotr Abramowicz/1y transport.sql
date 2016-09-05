@@ -92,7 +92,7 @@ WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
 AND sh.start_time >= to_date('2016-01-01','YYYY-MM-DD')
-AND sh.start_time < to_date('2016-06-01','YYYY-MM-DD')
+AND sh.start_time < to_date('2016-02-01','YYYY-MM-DD')
 
 AND om.shipment_gid = sh.shipment_gid
 AND orls.order_release_gid = om.order_release_gid
@@ -109,6 +109,7 @@ AND orls.order_release_gid = om.order_release_gid
 		
 AND sh.domain_name <> 'UGO'
 
+--AND SH.SHIPMENT_GID IN ('ULE/PR.102181167','ULE/PR.102181359','ULE/PR.102174106','ULE/PR.102184372','ULE/PR.102184785')
 
 --AND NOT exists (SELECT 1
 --FROM shipment_refnum sh_ref
