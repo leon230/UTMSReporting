@@ -1,0 +1,909 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataTemplate name="ULE_R4_ACCRUALS" description="ULE R4 Accruals Report for Road">
+	<parameters>
+		<parameter name="P_GL_USER" dataType="character" defaultValue="ULE.ADMIN"/>
+		<parameter name="P_ROLE_ID" dataType="character" defaultValue="ADMIN"/>
+		<parameter name="P_DATE_FORMAT" dataType="character" defaultValue="YYYY/MM/DD"/>		
+		<parameter name="P_ULE_FROM_DATE" dataType="date"/>
+		<parameter name="P_ULE_TO_DATE" dataType="date"/>
+		<parameter name="P_ULE_DOMAIN" dataType="character"/>	
+		<parameter name="P_ULE_CREATED" dataType="character"/>
+		<parameter name="P_ULE_STREAM" dataType="character"/>		
+		<parameter name="P_ULE_REGION" dataType="character"/>		
+		<parameter name="P_ULE_SRCE_COUNTRY" dataType="character"/>		
+		<parameter name="P_ULE_DEST_COUNTRY" dataType="character"/>		
+	</parameters>
+	<lexicals/>
+	<dataQuery>
+		<sqlStatement name="VPD">
+			<![CDATA[
+				SELECT vpd.set_user_r_fct(:P_GL_USER,'ULE.ULE NO SECURITY') as gl_user from dual
+			]]>
+		</sqlStatement>			
+		<sqlStatement name="ACCRUALS">
+			<![CDATA[ 
+WITH accrual_v as 
+-- D.ARZO 02/10/2014 - Changed union to union all to avoid distinct rows selection and incorrect package count during aggregation
+( select * from 
+        -- 1) STANDARD Orders planned and allocated 
+       (select
+                alloc.cost_description,
+                alloc.cost,
+                alloc.alloc_cost_seqno,
+                substr(alloc.accessorial_code_gid,instr(alloc.accessorial_code_gid,'.')+1) as accessorial_code_xid,
+                (select nvl((select 'Y' from shipment_cost shc 
+                    where shc.shipment_gid = shp.shipment_gid 
+                        and shc.accessorial_code_gid = alloc.accessorial_code_gid
+                        --and shc.accessorial_cost_gid is NOT null --05.26.2015 BTF-INC000096132722 
+                        and shc.cost_type = 'A'
+                        and rownum = 1),'N') from dual) as CLAIMED, -- 2.16.2015 BTF-Fuel Decoupling / 05.26.2015 BTF-INC000096132722
+                (SELECT SUM(sueruj.total_num_reference_units)
+FROM ship_unit_equip_ref_unit_join sueruj,
+  SHIP_UNIT SU
+WHERE sueruj.ship_unit_gid = su.ship_unit_gid
+AND su.order_release_gid   =orl.order_release_gid) TOTAL_NUM_REFERENCE_UNITS, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+(SELECT SUM(SU.ship_unit_count)
+FROM ship_unit SU
+WHERE SU.order_release_gid = orl.order_release_gid) ship_unit_count,  ----Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+                sus.ship_unit_spec_name,
+                orl.order_release_gid,
+                shp.shipment_gid,
+                shp.transport_mode_gid,            
+                shp.shipment_xid SHIPMENT_NUMBER_ID,
+                orl_rg.order_release_refnum_value REGION,
+                orl.order_release_xid TRANSPORT_ORDER_NO,
+                NVL(to_char(SHS.actual_arrival, 'DD/MM/YYYY'),to_char(ORL.late_delivery_date, 'DD/MM/YYYY')) UNLOADING_DATE,
+                loc_s.location_xid SOURCE_LOCATION_ID,
+                replace(replace(loc_s.location_name, '&', 'and'), '  ', ' ') SOURCE_LOCATION_NAME,
+                loc_s.city SOURCE_LOCATION_CITY ,
+                loc_s.country_code3_gid SOURCE_LOCATION_COUNTRY ,                
+                loc_d.location_xid DEST_LOCATION_ID,
+                replace(replace(loc_d.location_name, '&', 'and'), '  ', ' ') DEST_LOCATION_NAME,
+                loc_d.city DEST_LOCATION_CITY ,
+                loc_d.country_code3_gid DEST_LOCATION_COUNTRY ,
+                CASE
+					WHEN (sr_large_or.shipment_refnum_value = 'Y') THEN sr_payer.shipment_refnum_value
+                    WHEN (SHP.source_location_gid = ORL.source_location_gid) THEN ORL_LEG1_PAYER.order_release_refnum_value 
+                    WHEN (SHP.dest_location_gid = ORL.dest_location_gid) THEN ORL_LEG2_PAYER.order_release_refnum_value 
+                    ELSE ORL_HAND_PAYER.order_release_refnum_value 
+                END PAYER_ID,		-- Column modified for CEE Retrofit 05/15/2015
+                orl_cc.order_release_refnum_value COST_CENTER,
+                orl_gln.order_release_refnum_value GENERAL_LEDGER_NUMBER,
+                orl_mt.order_release_refnum_value MATERIAL_TYPE,
+                orl_tc.order_release_refnum_value SERVICE_LEVEL,
+                loc_serv.location_xid BILLING_PARTNER_ID,
+                replace(replace(loc_serv.location_name, '&', 'and'), '  ', ' ') BILLING_PARTNER_NAME,
+                xl.x_lane_xid LANE_ID,      
+                replace(replace(orl.equipment_group_gid, '&', 'and'), '  ', ' ') SERVICE_ID,
+                orl_po.order_release_refnum_value PO_NUMBER,
+                alloc_base.allocated_cost_currency_gid CURRENCY,
+                NVL(epoca_original_stream.order_release_refnum_value,orl_str.order_release_refnum_value) as STREAM,	-- Column modified for CEE Retrofit 05/15/2015	
+                CASE
+                    WHEN (orl.order_release_type_gid = 'FINDUS') THEN 'FINDUS' 
+                    ELSE 'UNILEVER'
+                END as COMPANY		-- Column added for EPOCA 05/14/2015
+            FROM order_release orl
+                join order_movement omv on omv.order_release_gid = orl.order_release_gid
+                join shipment shp on shp.shipment_gid = omv.shipment_gid 
+                join location loc_s on loc_s.location_gid = orl.source_location_gid
+                join location loc_d on loc_d.location_gid = orl.dest_location_gid
+                join location loc_serv on loc_serv.location_gid = shp.servprov_gid
+                join shipment_stop shs on  shs.shipment_gid =  shp.shipment_gid and shs.stop_type = 'D'
+				left join shipment_refnum sr_payer on sr_payer.shipment_gid = shp.shipment_gid
+						and sr_payer.shipment_refnum_qual_gid = 'ULE.ULE_PAYER' -- Table Added for CEE Retrofit 05/15/2015
+				left join shipment_refnum sr_large_or on sr_large_or.shipment_gid = sr_payer.shipment_gid
+						and sr_large_or.shipment_refnum_qual_gid = 'ULE.ULE_LARGE_ORDER_SPLIT' -- Table Added for CEE Retrofit 05/15/2015
+				left join rate_geo rg on rg.rate_geo_gid = shp.rate_geo_gid
+                left join x_lane xl on xl.x_lane_gid = rg.x_lane_gid 
+                join ship_unit su on su.order_release_gid = orl.order_release_gid
+                join ship_unit_spec sus on sus.ship_unit_spec_gid = su.transport_handling_unit_gid  
+                left join ship_unit_equip_ref_unit_join sueruj on sueruj.ship_unit_gid = su.ship_unit_gid and su.order_release_gid =orl.order_release_gid
+                join allocation_base alloc_base on alloc_base.shipment_gid = shp.shipment_gid 
+                join allocation_order_release_d alloc on alloc.alloc_seq_no = alloc_base.alloc_seq_no and alloc.order_release_gid = orl.order_release_gid
+                left join order_release_refnum orl_leg1_payer on orl_leg1_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg1_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG1_PAYER','ULE.ULE_PAYER') 
+                left join order_release_refnum orl_leg2_payer on orl_leg2_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg2_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG2_PAYER','ULE.ULE_PAYER')
+                left join order_release_refnum orl_hand_payer on orl_hand_payer.order_release_gid = orl.order_release_gid
+                        and orl_hand_payer.order_release_refnum_qual_gid in ('ULE.ULE_HANDLING_PAYER','ULE.ULE_PAYER')
+                join order_release_refnum orl_mt on orl_mt.order_release_gid = orl.order_release_gid
+                        and orl_mt.order_release_refnum_qual_gid ='ULE.ULE_MATERIAL_TYPE'
+                left join order_release_refnum orl_tc on orl_tc.order_release_gid = orl.order_release_gid
+                        and orl_tc.order_release_refnum_qual_gid ='ULE.ULE_TRANSPORT_CONDITION'
+                left join order_release_refnum orl_type on orl_type.order_release_gid = orl.order_release_gid
+                        and orl_type.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                join order_release_refnum orl_str on orl_str.order_release_gid = orl.order_release_gid
+                        and orl_str.order_release_refnum_qual_gid = 'ULE.ULE_STREAM'
+                left join order_release_refnum orl_cc on orl_cc.order_release_gid = orl.order_release_gid 
+                        and orl_cc.order_release_refnum_qual_gid = 'ULE.ULE_COST CENTER'
+                left join order_release_refnum orl_gln on orl_gln.order_release_gid = orl.order_release_gid 
+                        and orl_gln.order_release_refnum_qual_gid = 'ULE.ULE_GLN'   
+                left join order_release_refnum orl_po on orl_po.order_release_gid = orl.order_release_gid 
+                        and orl_po.order_release_refnum_qual_gid = 'ULE.ULE_PO_NUMBER'
+                left join order_release_refnum orl_rg on orl_rg.order_release_gid = orl.order_release_gid 
+                        and orl_rg.order_release_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+               left join order_release_refnum orl_creatdby on orl_creatdby.order_release_gid = orl.order_release_gid 
+                      and orl_creatdby.order_release_refnum_qual_gid = 'ULE.ULE_CREATED_BY' --Table Added for EPOCA 05/14/2015
+               -- left join order_release_refnum orl_org_strm on orl_org_strm.order_release_gid = orl.order_release_gid 
+               --         and orl_org_strm.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM' --Table Added for EPOCA 05/14/2015
+				      -- Added for EPOCA 05/14/2015
+				LEFT JOIN  -- Table Added for EPOCA 05/14/2015
+                 (
+                 select orr.order_release_gid,
+                 sh.shipment_gid,
+                  --sh.num_order_releases,
+                 orr.order_release_refnum_value,
+                 --count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid)  order_types,
+                 DECODE(count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid),2,'SECONDARY',orr.order_release_refnum_value)  correct_refnum_value                                    
+                 from shipment sh,
+                 order_movement om,
+                 order_release_refnum orr
+                 where sh.shipment_gid = om.shipment_gid
+                 and om.order_release_gid = orr.order_release_gid
+                 and orr.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM'
+	             )
+                 epoca_original_stream  --CR billing frequency 
+	             ON
+                 epoca_original_stream.order_release_gid               = orl.order_release_gid
+             WHERE trunc(ORL.late_delivery_date,'MONTH') <= trunc(sysdate,'MONTH') 
+                AND not exists (select 1 from shipment_stop shs2 
+                    where shs2.shipment_gid = shs.shipment_gid and shs2.stop_num > shs.stop_num)
+                AND not exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid in ('ULE.ULE_FINAL_BILLING_NUMBER','ULE.ULE_FINAL_BILLING_NUMBER_LEG1','ULE.ULE_FINAL_BILLING_NUMBER_LEG2','ULE.ULE_FINAL_BILLING_NUMBER_HANDLING','ULE.ULE_FINANCE_PO_NUMBER','ULE.ULE_FINANCE_PO_NUMBER_LEG1','ULE.ULE_FINANCE_PO_NUMBER_LEG2','ULE.ULE_FINANCE_PO_NUMBER_HANDLING'))
+				AND not exists (select 1 from shipment_refnum srbil_no, shipment shp
+                    WHERE srbil_no.shipment_gid= shs.shipment_gid
+                    AND srbil_no.shipment_refnum_qual_gid ='ULE.ULE_FINAL_BILLING_NUMBER') -- Filter Added for CEE Retrofit 05/18/2015 
+                AND not exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                    and ref.order_release_refnum_value in ('BULK','ULE.ULE_BULK'))
+               and  (shs.actual_arrival is null and orl.late_delivery_date BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1
+               or shs.actual_arrival is not null and shs.actual_arrival  BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1)
+               and su.ship_unit_count is not null
+               and sus.ship_unit_spec_name is not null
+               and (shp.domain_name = :P_ULE_DOMAIN or :P_ULE_DOMAIN is null)
+               --and (orl_str.order_release_refnum_value = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   --Commented and Added for INC000097907860
+			   --and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = decode(:P_ULE_STREAM,'ALL',NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value),:P_ULE_STREAM) or :P_ULE_STREAM is null)
+			   -- Ends here 
+               and (orl_rg.order_release_refnum_value = :P_ULE_REGION or :P_ULE_REGION is null)
+               and (loc_s.country_code3_gid = :P_ULE_SRCE_COUNTRY or :P_ULE_SRCE_COUNTRY is null)
+               and (loc_s.country_code3_gid = :P_ULE_SRCE_COUNTRY or :P_ULE_SRCE_COUNTRY is null)
+               and (loc_d.country_code3_gid = :P_ULE_DEST_COUNTRY or :P_ULE_DEST_COUNTRY is null)
+             ---  and (orl_creatdby.order_release_refnum_value = :P_ULE_CREATED or :P_ULE_CREATED is null) -- Parameter Added for EPOCA 05/14/2015
+			   and (decode(:P_ULE_CREATED,'FINDUS',orl.order_release_type_gid,orl_creatdby.order_release_refnum_value)=:P_ULE_CREATED or :P_ULE_CREATED is null)
+			  )
+union all
+        -- 2) BULK Orders planned and allocated 
+           (select
+                alloc_line.cost_description,
+                alloc_line.cost,
+                alloc_line.alloc_cost_seqno,
+                substr(alloc_line.accessorial_code_gid,instr(alloc_line.accessorial_code_gid,'.')+1) as accessorial_code_xid,
+                (select nvl((select 'Y' from shipment_cost shc 
+                    where shc.shipment_gid = shp.shipment_gid 
+                        and shc.accessorial_code_gid = alloc_line.accessorial_code_gid
+                        --and shc.accessorial_cost_gid is NOT null  --05.26.2015 BTF-INC000096132722
+                        and shc.cost_type = 'A'
+                        and rownum = 1),'N') from dual) as CLAIMED, -- 2.16.2015 BTF-Fuel Decoupling / 05.26.2015 BTF-INC000096132722
+      (SELECT SUM(sueruj.total_num_reference_units)
+FROM ship_unit_equip_ref_unit_join sueruj,
+  SHIP_UNIT SU
+WHERE sueruj.ship_unit_gid = su.ship_unit_gid
+AND su.order_release_gid   =orl.order_release_gid) TOTAL_NUM_REFERENCE_UNITS, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+(SELECT SUM(SU.ship_unit_count)
+FROM ship_unit SU
+WHERE SU.order_release_gid = orl.order_release_gid) ship_unit_count, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+                sus.ship_unit_spec_name,
+                orl.order_release_gid,
+                shp.shipment_gid,    
+                shp.transport_mode_gid,                
+                shp.shipment_xid SHIPMENT_NUMBER_ID,                
+                orl_rg.order_release_refnum_value REGION,                
+                orl.order_release_xid TRANSPORT_ORDER_NO,
+                NVL(to_char(SHS.actual_arrival, 'DD/MM/YYYY'),to_char(ORL.late_delivery_date, 'DD/MM/YYYY')) UNLOADING_DATE,
+                loc_s.location_xid SOURCE_LOCATION_ID,
+                replace(replace(loc_s.location_name, '&', 'and'), '  ', ' ') SOURCE_LOCATION_NAME,
+                loc_s.city SOURCE_LOCATION_CITY ,
+                loc_s.country_code3_gid SOURCE_LOCATION_COUNTRY ,                
+                loc_d.location_xid DEST_LOCATION_ID,
+                replace(replace(loc_d.location_name, '&', 'and'), '  ', ' ') DEST_LOCATION_NAME,
+                loc_d.city DEST_LOCATION_CITY ,
+                loc_d.country_code3_gid DEST_LOCATION_COUNTRY ,                
+                CASE
+					WHEN (sr_large_or.shipment_refnum_value = 'Y') THEN sr_payer.shipment_refnum_value
+                    WHEN (SHP.source_location_gid = ORL.source_location_gid) THEN ORL_LEG1_PAYER.order_release_refnum_value 
+                    WHEN (SHP.dest_location_gid = ORL.dest_location_gid) THEN ORL_LEG2_PAYER.order_release_refnum_value 
+                    ELSE ORL_HAND_PAYER.order_release_refnum_value 
+                END PAYER_ID, -- Column modified for CEE Retrofit 05/15/2015
+                orl_cc.order_release_refnum_value COST_CENTER,
+                orl_gln.order_release_refnum_value GENERAL_LEDGER_NUMBER,
+                orl_mt.order_release_refnum_value MATERIAL_TYPE,
+                orl_tc.order_release_refnum_value SERVICE_LEVEL,
+                loc_serv.location_xid BILLING_PARTNER_ID,
+                replace(replace(loc_serv.location_name, '&', 'and'), '  ', ' ') BILLING_PARTNER_NAME,
+                xl.x_lane_xid LANE_ID,      
+                replace(replace(orl.equipment_group_gid, '&', 'and'), '  ', ' ') SERVICE_ID,
+                orl_po.order_release_refnum_value PO_NUMBER,
+                alloc_base.allocated_cost_currency_gid CURRENCY,
+                NVL(epoca_original_stream.order_release_refnum_value,orl_str.order_release_refnum_value) as STREAM, -- Column modified for CEE Retrofit 05/15/2015
+                CASE
+                    WHEN (orl.order_release_type_gid = 'FINDUS') THEN 'FINDUS' 
+                    ELSE 'UNILEVER' 
+                END as COMPANY -- Column added for EPOCA 05/14/2015                 
+            FROM order_release orl
+                join order_movement omv on omv.order_release_gid = orl.order_release_gid
+                join shipment shp on shp.shipment_gid = omv.shipment_gid 
+                join location loc_s on loc_s.location_gid = orl.source_location_gid
+                join location loc_d on loc_d.location_gid = orl.dest_location_gid
+                join location loc_serv on loc_serv.location_gid = shp.servprov_gid
+                join shipment_stop shs on  shs.shipment_gid =  shp.shipment_gid and shs.stop_type = 'D'
+                left join shipment_refnum sr_payer on sr_payer.shipment_gid = shp.shipment_gid
+						and sr_payer.shipment_refnum_qual_gid = 'ULE.ULE_PAYER' -- Table Added for CEE Retrofit 05/15/2015
+				left join shipment_refnum sr_large_or on sr_large_or.shipment_gid = sr_payer.shipment_gid
+						and sr_large_or.shipment_refnum_qual_gid = 'ULE.ULE_LARGE_ORDER_SPLIT' -- Table Added for CEE Retrofit 05/15/2015
+				left join rate_geo rg on rg.rate_geo_gid = shp.rate_geo_gid
+                left join x_lane xl on xl.x_lane_gid = rg.x_lane_gid 
+                join ship_unit su on su.order_release_gid = orl.order_release_gid
+                join ship_unit_spec sus on sus.ship_unit_spec_gid = su.transport_handling_unit_gid  
+                -- D.ARZO 02/10/2014 - changed to outter join for ship_unit_equip_ref_unit_join
+                left join ship_unit_equip_ref_unit_join sueruj on sueruj.ship_unit_gid = su.ship_unit_gid and su.order_release_gid =orl.order_release_gid
+                join allocation_base alloc_base on alloc_base.shipment_gid = shp.shipment_gid 
+                join allocation_or_line_d alloc_line on alloc_line.alloc_seq_no = alloc_base.alloc_seq_no
+                join order_release_line orl_line on orl_line.order_release_line_gid = alloc_line.order_release_line_gid 
+                   and orl_line.order_release_gid = orl.order_release_gid
+                left join order_release_refnum orl_leg1_payer on orl_leg1_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg1_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG1_PAYER','ULE.ULE_PAYER') 
+                left join order_release_refnum orl_leg2_payer on orl_leg2_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg2_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG2_PAYER','ULE.ULE_PAYER')
+                left join order_release_refnum orl_hand_payer on orl_hand_payer.order_release_gid = orl.order_release_gid
+                        and orl_hand_payer.order_release_refnum_qual_gid in ('ULE.ULE_HANDLING_PAYER','ULE.ULE_PAYER')
+                left join order_release_refnum orl_mt on orl_mt.order_release_gid = orl.order_release_gid
+                        and orl_mt.order_release_refnum_qual_gid ='ULE.ULE_MATERIAL_TYPE'
+                left join order_release_refnum orl_tc on orl_tc.order_release_gid = orl.order_release_gid
+                        and orl_tc.order_release_refnum_qual_gid ='ULE.ULE_TRANSPORT_CONDITION'
+                left join order_release_refnum orl_type on orl_type.order_release_gid = orl.order_release_gid
+                        and orl_type.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                join order_release_refnum orl_str on orl_str.order_release_gid = orl.order_release_gid
+                        and orl_str.order_release_refnum_qual_gid = 'ULE.ULE_STREAM'
+                left join order_release_refnum orl_cc on orl_cc.order_release_gid = orl.order_release_gid 
+                        and orl_cc.order_release_refnum_qual_gid = 'ULE.ULE_COST CENTER'
+                left join order_release_refnum orl_gln on orl_gln.order_release_gid = orl.order_release_gid 
+                        and orl_gln.order_release_refnum_qual_gid = 'ULE.ULE_GLN'   
+                left join order_release_refnum orl_po on orl_po.order_release_gid = orl.order_release_gid 
+                        and orl_po.order_release_refnum_qual_gid = 'ULE.ULE_PO_NUMBER'
+                left join order_release_refnum orl_rg on orl_rg.order_release_gid = orl.order_release_gid 
+                        and orl_rg.order_release_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+                left join order_release_refnum orl_creatdby on orl_creatdby.order_release_gid = orl.order_release_gid 
+                        and orl_creatdby.order_release_refnum_qual_gid = 'ULE.ULE_CREATED_BY' --Table Added for EPOCA 05/14/2015
+                --left join order_release_refnum orl_org_strm on orl_org_strm.order_release_gid = orl.order_release_gid 
+                       -- and orl_org_strm.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM' --Table Added for EPOCA 05/14/2015
+				LEFT JOIN  -- Table Added for EPOCA 05/14/2015
+					(
+					  select orr.order_release_gid,
+                      sh.shipment_gid,
+                      --sh.num_order_releases,
+                      orr.order_release_refnum_value,
+                      --count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid)  order_types,
+                      DECODE(count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid),2,'SECONDARY',orr.order_release_refnum_value)  correct_refnum_value                                    
+                      from shipment sh,
+                      order_movement om,
+                      order_release_refnum orr
+                      where sh.shipment_gid = om.shipment_gid
+                      and om.order_release_gid = orr.order_release_gid
+                      and orr.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM'
+	                  )
+					epoca_original_stream  --CR billing frequency 
+					ON
+					epoca_original_stream.order_release_gid               = orl.order_release_gid					   
+				WHERE trunc(ORL.late_delivery_date,'MONTH') <= trunc(sysdate,'MONTH') 
+                AND not exists (select 1 from shipment_stop shs2 
+                    where shs2.shipment_gid = shs.shipment_gid and shs2.stop_num > shs.stop_num)
+                AND not exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid in ('ULE.ULE_FINAL_BILLING_NUMBER','ULE.ULE_FINAL_BILLING_NUMBER_LEG1','ULE.ULE_FINAL_BILLING_NUMBER_LEG2','ULE.ULE_FINAL_BILLING_NUMBER_HANDLING','ULE.ULE_FINANCE_PO_NUMBER','ULE.ULE_FINANCE_PO_NUMBER_LEG1','ULE.ULE_FINANCE_PO_NUMBER_LEG2','ULE.ULE_FINANCE_PO_NUMBER_HANDLING'))
+				AND not exists (select 1 from shipment_refnum srbil_no, shipment shp
+                    WHERE srbil_no.shipment_gid= shs.shipment_gid
+                    AND srbil_no.shipment_refnum_qual_gid ='ULE.ULE_FINAL_BILLING_NUMBER')  -- Filter Added for CEE Retrofit Retrofit 05/18/2015
+				AND exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                    and ref.order_release_refnum_value = 'BULK')
+               and  (shs.actual_arrival is null and orl.late_delivery_date BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1
+               or shs.actual_arrival is not null and shs.actual_arrival  BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1)
+               and su.ship_unit_count is not null
+               and sus.ship_unit_spec_name is not null
+               and (shp.domain_name = :P_ULE_DOMAIN or :P_ULE_DOMAIN is null)
+               --and (orl_str.order_release_refnum_value = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   -- Commented and added for INC000097907860
+			   --and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = decode(:P_ULE_STREAM,'ALL',NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value),:P_ULE_STREAM)  OR :P_ULE_STREAM is null)
+			   -- Ends Here 
+               and (orl_rg.order_release_refnum_value = :P_ULE_REGION or :P_ULE_REGION is null)
+               and (loc_s.country_code3_gid = :P_ULE_SRCE_COUNTRY or :P_ULE_SRCE_COUNTRY is null)
+               and (loc_d.country_code3_gid = :P_ULE_DEST_COUNTRY or :P_ULE_DEST_COUNTRY is null)
+              -- and (orl_creatdby.order_release_refnum_value = :P_ULE_CREATED or :P_ULE_CREATED is null) -- Parameter Added for EPOCA 05/14/2015
+                and (decode(:P_ULE_CREATED,'FINDUS',orl.order_release_type_gid,orl_creatdby.order_release_refnum_value)=:P_ULE_CREATED or :P_ULE_CREATED is null)
+			   )
+union all
+        -- 3) Orders not planned
+           (select
+                '' as cost_description,
+                0 as cost,
+                0 as alloc_cost_seqno,
+                '' as accessorial_code_xid,
+                'N' as CLAIMED,
+                (SELECT SUM(sueruj.total_num_reference_units)
+FROM ship_unit_equip_ref_unit_join sueruj,
+  SHIP_UNIT SU
+WHERE sueruj.ship_unit_gid = su.ship_unit_gid
+AND su.order_release_gid   =orl.order_release_gid) TOTAL_NUM_REFERENCE_UNITS, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+(SELECT SUM(SU.ship_unit_count)
+FROM ship_unit SU
+WHERE SU.order_release_gid = orl.order_release_gid) ship_unit_count, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+                sus.ship_unit_spec_name,
+                orl.order_release_gid,
+                '' as shipment_gid,    
+                '' as transport_mode_gid,                
+                '' as SHIPMENT_NUMBER_ID,                
+                orl_rg.order_release_refnum_value REGION,                
+                orl.order_release_xid TRANSPORT_ORDER_NO,
+                to_char(ORL.late_delivery_date, 'DD/MM/YYYY') UNLOADING_DATE,
+                loc_s.location_xid SOURCE_LOCATION_ID,
+                replace(replace(loc_s.location_name, '&', 'and'), '  ', ' ') SOURCE_LOCATION_NAME,
+                loc_s.city SOURCE_LOCATION_CITY ,
+                loc_s.country_code3_gid SOURCE_LOCATION_COUNTRY ,                
+                loc_d.location_xid DEST_LOCATION_ID,
+                replace(replace(loc_d.location_name, '&', 'and'), '  ', ' ') DEST_LOCATION_NAME,
+                loc_d.city DEST_LOCATION_CITY ,
+                loc_d.country_code3_gid DEST_LOCATION_COUNTRY ,                
+                ORL_HAND_PAYER.order_release_refnum_value as PAYER_ID,
+                orl_cc.order_release_refnum_value COST_CENTER,
+                orl_gln.order_release_refnum_value GENERAL_LEDGER_NUMBER,
+                orl_mt.order_release_refnum_value MATERIAL_TYPE,
+                orl_tc.order_release_refnum_value SERVICE_LEVEL,
+                '' as BILLING_PARTNER_ID,
+                '' as BILLING_PARTNER_NAME,
+                '' as LANE_ID,      
+                replace(replace(orl.equipment_group_gid, '&', 'and'), '  ', ' ') SERVICE_ID,
+                orl_po.order_release_refnum_value PO_NUMBER,
+                '' as  CURRENCY,
+                NVL(epoca_original_stream.order_release_refnum_value,orl_str.order_release_refnum_value) as STREAM, -- Column modified for CEE Retrofit 05/15/2015
+                CASE
+                    WHEN (orl.order_release_type_gid = 'FINDUS') THEN 'FINDUS' 
+                    ELSE 'UNILEVER'
+                END as COMPANY -- Column added for EPOCA 05/14/2015                
+            FROM order_release orl
+                join location loc_s on loc_s.location_gid = orl.source_location_gid
+                join location loc_d on loc_d.location_gid = orl.dest_location_gid
+                join ship_unit su on su.order_release_gid = orl.order_release_gid
+                join ship_unit_spec sus on sus.ship_unit_spec_gid = su.transport_handling_unit_gid  
+                left join ship_unit_equip_ref_unit_join sueruj on sueruj.ship_unit_gid = su.ship_unit_gid and su.order_release_gid =orl.order_release_gid
+                left join order_release_refnum orl_leg1_payer on orl_leg1_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg1_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG1_PAYER','ULE.ULE_PAYER') 
+                left join order_release_refnum orl_leg2_payer on orl_leg2_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg2_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG2_PAYER','ULE.ULE_PAYER')
+                left join order_release_refnum orl_hand_payer on orl_hand_payer.order_release_gid = orl.order_release_gid
+                        and orl_hand_payer.order_release_refnum_qual_gid in ('ULE.ULE_HANDLING_PAYER','ULE.ULE_PAYER')
+                left join order_release_refnum orl_mt on orl_mt.order_release_gid = orl.order_release_gid
+                        and orl_mt.order_release_refnum_qual_gid ='ULE.ULE_MATERIAL_TYPE'
+                left join order_release_refnum orl_tc on orl_tc.order_release_gid = orl.order_release_gid
+                        and orl_tc.order_release_refnum_qual_gid ='ULE.ULE_TRANSPORT_CONDITION'
+                left join order_release_refnum orl_type on orl_type.order_release_gid = orl.order_release_gid
+                        and orl_type.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                join order_release_refnum orl_str on orl_str.order_release_gid = orl.order_release_gid
+                        and orl_str.order_release_refnum_qual_gid = 'ULE.ULE_STREAM'
+                left join order_release_refnum orl_cc on orl_cc.order_release_gid = orl.order_release_gid 
+                        and orl_cc.order_release_refnum_qual_gid = 'ULE.ULE_COST CENTER'
+                left join order_release_refnum orl_gln on orl_gln.order_release_gid = orl.order_release_gid 
+                        and orl_gln.order_release_refnum_qual_gid = 'ULE.ULE_GLN'   
+                left join order_release_refnum orl_po on orl_po.order_release_gid = orl.order_release_gid 
+                        and orl_po.order_release_refnum_qual_gid = 'ULE.ULE_PO_NUMBER'
+                left join order_release_refnum orl_rg on orl_rg.order_release_gid = orl.order_release_gid 
+                        and orl_rg.order_release_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+                left join order_release_refnum orl_creatdby on orl_creatdby.order_release_gid = orl.order_release_gid 
+                        and orl_creatdby.order_release_refnum_qual_gid = 'ULE.ULE_CREATED_BY' --Table Added for EPOCA 05/14/2015
+                --left join order_release_refnum orl_org_strm on orl_org_strm.order_release_gid = orl.order_release_gid 
+                      --  and orl_org_strm.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM' --Table Added for EPOCA 05/14/2015
+				LEFT JOIN  -- Table Added for EPOCA 05/14/2015
+				(
+				  select orr.order_release_gid,
+                  sh.shipment_gid,
+                  --sh.num_order_releases,
+                  orr.order_release_refnum_value,
+                  --count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid)  order_types,
+                  DECODE(count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid),2,'SECONDARY',orr.order_release_refnum_value)  correct_refnum_value                                    
+                  from shipment sh,
+                  order_movement om,
+                  order_release_refnum orr
+                  where sh.shipment_gid = om.shipment_gid
+                  and om.order_release_gid = orr.order_release_gid
+                  and orr.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM'
+	              )
+				 epoca_original_stream  --CR billing frequency 
+				 ON
+				 epoca_original_stream.order_release_gid               = orl.order_release_gid
+				WHERE trunc(ORL.late_delivery_date,'MONTH') <= trunc(sysdate,'MONTH') 
+                AND not exists (select 1 from order_movement omv where omv.order_release_gid = orl.order_release_gid)
+                AND not exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid in ('ULE.ULE_FINAL_BILLING_NUMBER','ULE.ULE_FINAL_BILLING_NUMBER_LEG1','ULE.ULE_FINAL_BILLING_NUMBER_LEG2','ULE.ULE_FINAL_BILLING_NUMBER_HANDLING','ULE.ULE_FINANCE_PO_NUMBER','ULE.ULE_FINANCE_PO_NUMBER_LEG1','ULE.ULE_FINANCE_PO_NUMBER_LEG2','ULE.ULE_FINANCE_PO_NUMBER_HANDLING'))
+			--	AND not exists (select 1 from shipment_refnum srbil_no, shipment shp
+            --        WHERE srbil_no.shipment_gid= shp.shipment_gid
+            --        AND srbil_no.shipment_refnum_qual_gid ='ULE.ULE_FINAL_BILLING_NUMBER') -- Filter Added for CEE Retrofit Retrofit 05/18/2015
+               and  orl.late_delivery_date BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1
+               and su.ship_unit_count is not null
+               and sus.ship_unit_spec_name is not null
+               -- and (orl_str.order_release_refnum_value = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   -- Commented and Added for INC000097907860
+			  -- and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = decode(:P_ULE_STREAM,'ALL',NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value),:P_ULE_STREAM) or :P_ULE_STREAM is null)
+			   -- Ends Here 
+               and (orl_rg.order_release_refnum_value = :P_ULE_REGION or :P_ULE_REGION is null)
+               and (loc_s.country_code3_gid = :P_ULE_SRCE_COUNTRY or :P_ULE_SRCE_COUNTRY is null)
+               and (loc_d.country_code3_gid = :P_ULE_DEST_COUNTRY or :P_ULE_DEST_COUNTRY is null)
+               ---and (orl_creatdby.order_release_refnum_value = :P_ULE_CREATED or :P_ULE_CREATED is null) -- Parameter Added for EPOCA 05/14/2015
+                and (decode(:P_ULE_CREATED,'FINDUS',orl.order_release_type_gid,orl_creatdby.order_release_refnum_value)=:P_ULE_CREATED or :P_ULE_CREATED is null)
+			   )  
+union all
+        -- 4) Orders planned without allocation
+      (select
+                '' as cost_description,
+                0 as cost,
+                0 as alloc_cost_seqno,
+                '' as accessorial_code_xid,
+                'N' as CLAIMED,
+                (SELECT SUM(sueruj.total_num_reference_units)
+FROM ship_unit_equip_ref_unit_join sueruj,
+  SHIP_UNIT SU
+WHERE sueruj.ship_unit_gid = su.ship_unit_gid
+AND su.order_release_gid   =orl.order_release_gid) TOTAL_NUM_REFERENCE_UNITS, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+(SELECT SUM(SU.ship_unit_count)
+FROM ship_unit SU
+WHERE SU.order_release_gid = orl.order_release_gid) ship_unit_count, --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+                sus.ship_unit_spec_name,
+                orl.order_release_gid,
+                shp.shipment_gid,
+                shp.transport_mode_gid,            
+                shp.shipment_xid SHIPMENT_NUMBER_ID,
+                orl_rg.order_release_refnum_value REGION,
+                orl.order_release_xid TRANSPORT_ORDER_NO,
+                NVL(to_char(SHS.actual_arrival, 'DD/MM/YYYY'),to_char(ORL.late_delivery_date, 'DD/MM/YYYY')) UNLOADING_DATE,
+                loc_s.location_xid SOURCE_LOCATION_ID,
+                replace(replace(loc_s.location_name, '&', 'and'), '  ', ' ') SOURCE_LOCATION_NAME,
+                loc_s.city SOURCE_LOCATION_CITY ,
+                loc_s.country_code3_gid SOURCE_LOCATION_COUNTRY ,                
+                loc_d.location_xid DEST_LOCATION_ID,
+                replace(replace(loc_d.location_name, '&', 'and'), '  ', ' ') DEST_LOCATION_NAME,
+                loc_d.city DEST_LOCATION_CITY ,
+                loc_d.country_code3_gid DEST_LOCATION_COUNTRY ,
+                CASE
+					WHEN (sr_large_or.shipment_refnum_value = 'Y') THEN sr_payer.shipment_refnum_value
+                    WHEN (SHP.source_location_gid = ORL.source_location_gid) THEN ORL_LEG1_PAYER.order_release_refnum_value 
+                    WHEN (SHP.dest_location_gid = ORL.dest_location_gid) THEN ORL_LEG2_PAYER.order_release_refnum_value 
+                    ELSE ORL_HAND_PAYER.order_release_refnum_value 
+                END PAYER_ID, -- Column modified for CEE Retrofit 05/15/2015
+                orl_cc.order_release_refnum_value COST_CENTER,
+                orl_gln.order_release_refnum_value GENERAL_LEDGER_NUMBER,
+                orl_mt.order_release_refnum_value MATERIAL_TYPE,
+                orl_tc.order_release_refnum_value SERVICE_LEVEL,
+                loc_serv.location_xid BILLING_PARTNER_ID,
+                replace(replace(loc_serv.location_name, '&', 'and'), '  ', ' ') BILLING_PARTNER_NAME,
+                xl.x_lane_xid LANE_ID,      
+                replace(replace(orl.equipment_group_gid, '&', 'and'), '  ', ' ') SERVICE_ID,
+                orl_po.order_release_refnum_value PO_NUMBER,
+                '' CURRENCY,
+                NVL(epoca_original_stream.order_release_refnum_value,orl_str.order_release_refnum_value) as STREAM, -- Column modified for CEE Retrofit 05/15/2015
+                CASE
+                    WHEN (orl.order_release_type_gid = 'FINDUS') THEN 'FINDUS' 
+                    ELSE 'UNILEVER'
+                END as COMPANY  -- Column added for EPOCA 05/14/2015           
+            FROM order_release orl
+                join order_movement omv on omv.order_release_gid = orl.order_release_gid
+                join shipment shp on shp.shipment_gid = omv.shipment_gid 
+                join location loc_s on loc_s.location_gid = orl.source_location_gid
+                join location loc_d on loc_d.location_gid = orl.dest_location_gid
+                join location loc_serv on loc_serv.location_gid = shp.servprov_gid
+                join shipment_stop shs on  shs.shipment_gid =  shp.shipment_gid and shs.stop_type = 'D'
+				left join shipment_refnum sr_payer on sr_payer.shipment_gid = shp.shipment_gid
+						and sr_payer.shipment_refnum_qual_gid = 'ULE.ULE_PAYER' -- Table Added for CEE Retrofit 05/15/2015
+				left join shipment_refnum sr_large_or on sr_large_or.shipment_gid = sr_payer.shipment_gid
+						and sr_large_or.shipment_refnum_qual_gid = 'ULE.ULE_LARGE_ORDER_SPLIT' -- Table Added for CEE Retrofit 05/15/2015
+                left join rate_geo rg on rg.rate_geo_gid = shp.rate_geo_gid
+                left join x_lane xl on xl.x_lane_gid = rg.x_lane_gid 
+                join ship_unit su on su.order_release_gid = orl.order_release_gid
+                join ship_unit_spec sus on sus.ship_unit_spec_gid = su.transport_handling_unit_gid  
+                left join ship_unit_equip_ref_unit_join sueruj on sueruj.ship_unit_gid = su.ship_unit_gid and su.order_release_gid =orl.order_release_gid
+                left join order_release_refnum orl_leg1_payer on orl_leg1_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg1_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG1_PAYER','ULE.ULE_PAYER') 
+                left join order_release_refnum orl_leg2_payer on orl_leg2_payer.order_release_gid = orl.order_release_gid
+                        and orl_leg2_payer.order_release_refnum_qual_gid in( 'ULE.ULE_LEG2_PAYER','ULE.ULE_PAYER')
+                left join order_release_refnum orl_hand_payer on orl_hand_payer.order_release_gid = orl.order_release_gid
+                        and orl_hand_payer.order_release_refnum_qual_gid in ('ULE.ULE_HANDLING_PAYER','ULE.ULE_PAYER')
+                join order_release_refnum orl_mt on orl_mt.order_release_gid = orl.order_release_gid
+                        and orl_mt.order_release_refnum_qual_gid ='ULE.ULE_MATERIAL_TYPE'
+                left join order_release_refnum orl_tc on orl_tc.order_release_gid = orl.order_release_gid
+                        and orl_tc.order_release_refnum_qual_gid ='ULE.ULE_TRANSPORT_CONDITION'
+                left join order_release_refnum orl_type on orl_type.order_release_gid = orl.order_release_gid
+                        and orl_type.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                join order_release_refnum orl_str on orl_str.order_release_gid = orl.order_release_gid
+                        and orl_str.order_release_refnum_qual_gid = 'ULE.ULE_STREAM'
+                left join order_release_refnum orl_cc on orl_cc.order_release_gid = orl.order_release_gid 
+                        and orl_cc.order_release_refnum_qual_gid = 'ULE.ULE_COST CENTER'
+                left join order_release_refnum orl_gln on orl_gln.order_release_gid = orl.order_release_gid 
+                        and orl_gln.order_release_refnum_qual_gid = 'ULE.ULE_GLN'   
+                left join order_release_refnum orl_po on orl_po.order_release_gid = orl.order_release_gid 
+                        and orl_po.order_release_refnum_qual_gid = 'ULE.ULE_PO_NUMBER'
+                left join order_release_refnum orl_rg on orl_rg.order_release_gid = orl.order_release_gid 
+                        and orl_rg.order_release_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'       
+                left join order_release_refnum orl_creatdby on orl_creatdby.order_release_gid = orl.order_release_gid 
+                        and orl_creatdby.order_release_refnum_qual_gid = 'ULE.ULE_CREATED_BY' --Table Added for EPOCA 05/14/2015
+                --left join order_release_refnum orl_org_strm on orl_org_strm.order_release_gid = orl.order_release_gid 
+                        --and orl_org_strm.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM' --Table Added for EPOCA 05/14/2015
+				LEFT JOIN  -- Table Added for EPOCA 05/14/2015
+				(
+				  select orr.order_release_gid,
+                  sh.shipment_gid,
+                  --sh.num_order_releases,
+                  orr.order_release_refnum_value,
+                  --count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid)  order_types,
+                  DECODE(count(distinct(orr.order_release_refnum_value)) OVER (PARTITION BY sh.shipment_gid),2,'SECONDARY',orr.order_release_refnum_value)  correct_refnum_value                                    
+                  from shipment sh,
+                  order_movement om,
+                  order_release_refnum orr
+                  where sh.shipment_gid = om.shipment_gid
+                  and om.order_release_gid = orr.order_release_gid
+                  and orr.order_release_refnum_qual_gid = 'ULE.ORIGINAL_STREAM'
+	              )
+				epoca_original_stream  --CR billing frequency 
+				ON
+				epoca_original_stream.order_release_gid               = orl.order_release_gid
+				WHERE trunc(ORL.late_delivery_date,'MONTH') <= trunc(sysdate,'MONTH') 
+                AND not exists (select 1 from shipment_stop shs2 
+                    where shs2.shipment_gid = shs.shipment_gid and shs2.stop_num > shs.stop_num)
+                AND not exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid in ('ULE.ULE_FINAL_BILLING_NUMBER','ULE.ULE_FINAL_BILLING_NUMBER_LEG1','ULE.ULE_FINAL_BILLING_NUMBER_LEG2','ULE.ULE_FINAL_BILLING_NUMBER_HANDLING','ULE.ULE_FINANCE_PO_NUMBER','ULE.ULE_FINANCE_PO_NUMBER_LEG1','ULE.ULE_FINANCE_PO_NUMBER_LEG2','ULE.ULE_FINANCE_PO_NUMBER_HANDLING'))
+				AND not exists (select 1 from shipment_refnum srbil_no, shipment shp
+                    WHERE srbil_no.shipment_gid= shs.shipment_gid
+                    AND srbil_no.shipment_refnum_qual_gid ='ULE.ULE_FINAL_BILLING_NUMBER') -- Filter Added for CEE Retrofit 05/18/2015 
+				AND not exists (select 1 from order_release_refnum REF
+                    WHERE ORL.order_release_gid = REF.order_release_gid
+                    AND ref.order_release_refnum_qual_gid = 'ULE.ULE_ORDER_TYPE'
+                    and ref.order_release_refnum_value in ('BULK','ULE.ULE_BULK'))
+               -- D.ARZO 02/10/2014 - Change to handle scenario or orders with allocation base but no allocation line corresponding to shipments assigned (bad data)
+                and not exists (select 1 from allocation_base alloc_base 
+                            join allocation_order_release_d alloc on alloc.alloc_seq_no = alloc_base.alloc_seq_no 
+                            WHERE alloc_base.shipment_gid = shp.shipment_gid and alloc.order_release_gid = orl.order_release_gid)
+                and not exists (select 1 from allocation_base alloc_base
+                            join allocation_or_line_d alloc_line on alloc_line.alloc_seq_no = alloc_base.alloc_seq_no
+                            join order_release_line orl_line on orl_line.order_release_line_gid = alloc_line.order_release_line_gid 
+                            join allocation_order_release_d alloc on alloc.alloc_seq_no = alloc_base.alloc_seq_no 
+                            WHERE alloc_base.shipment_gid = shp.shipment_gid and alloc.order_release_gid = orl.order_release_gid)  
+            and  (shs.actual_arrival is null and orl.late_delivery_date BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1
+               or shs.actual_arrival is not null and shs.actual_arrival  BETWEEN TRUNC(TO_DATE(:P_ULE_FROM_DATE,:P_DATE_FORMAT)) and TRUNC(TO_DATE(:P_ULE_TO_DATE,:P_DATE_FORMAT))+1)
+               and su.ship_unit_count is not null
+               and sus.ship_unit_spec_name is not null
+               and (shp.domain_name = :P_ULE_DOMAIN or :P_ULE_DOMAIN is null)
+               --and (orl_str.order_release_refnum_value = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   -- Commented and Added for INC000097907860
+			   --and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = :P_ULE_STREAM or :P_ULE_STREAM is null)
+			   and (NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value) = decode(:P_ULE_STREAM,'ALL',NVL(epoca_original_stream.correct_refnum_value,orl_str.order_release_refnum_value),:P_ULE_STREAM) or :P_ULE_STREAM is null)
+			   -- Ends Here 
+               and (orl_rg.order_release_refnum_value = :P_ULE_REGION or :P_ULE_REGION is null)
+               and (loc_s.country_code3_gid = :P_ULE_SRCE_COUNTRY or :P_ULE_SRCE_COUNTRY is null)
+               and (loc_d.country_code3_gid = :P_ULE_DEST_COUNTRY or :P_ULE_DEST_COUNTRY is null)
+              --- and (orl_creatdby.order_release_refnum_value = :P_ULE_CREATED or :P_ULE_CREATED is null) -- Parameter Added for EPOCA 05/14/2015
+			   and (decode(:P_ULE_CREATED,'FINDUS',orl.order_release_type_gid,orl_creatdby.order_release_refnum_value)=:P_ULE_CREATED or :P_ULE_CREATED is null)
+               )                                  
+        )                         
+select * from(
+select
+   TRANSPORT_ORDER_NO ORDER_RELEASE,
+   UNLOADING_DATE,
+   SOURCE_LOCATION_ID,
+   SOURCE_LOCATION_NAME,
+   SOURCE_LOCATION_CITY,
+   SOURCE_LOCATION_COUNTRY,   
+   DEST_LOCATION_ID,
+   DEST_LOCATION_NAME,
+   DEST_LOCATION_CITY,
+   DEST_LOCATION_COUNTRY,     
+   SHIPMENT_NUMBER_ID,
+   REGION,
+   PAYER_ID,   
+   BILLING_PARTNER_ID,
+   BILLING_PARTNER_NAME,   
+   COST_CENTER,
+   GENERAL_LEDGER_NUMBER,
+   MATERIAL_TYPE,   
+   LANE_ID,
+   SERVICE_ID,   
+   SERVICE_LEVEL,
+   CURRENCY,
+   case when SHIPMENT_NUMBER_ID is null then null else round(sum(nvl(cost,0)),2) end TOTAL_COST,
+   case when SHIPMENT_NUMBER_ID is null then null else round(sum(nvl(
+            case when  CLAIMED = 'Y' 
+				 and (cost_description = 'A' 
+				 and nvl(accessorial_code_xid,'X') <> 'ULE_FUEL_REIMBURSEMENT'
+				 and nvl(accessorial_code_xid,'X') not in ('ULE_FUEL SURCHARGE CORRECTION')
+				 and nvl(accessorial_code_xid,'X') not like 'ULE_FUEL_SURCHARGE_%')
+                 then cost	
+            else 0
+             end
+        ,0)),2) end CLAIMED_COST, -- 2.16.2015 BTF-Fuel Decoupling / 05.26.2015 BTF-INC000096132722
+		case when SHIPMENT_NUMBER_ID is null then null else decode(transport_mode_gid,'TL',round(sum(nvl(
+            case when cost_description = 'B' or
+                 cost_description = 'S' or
+				(CLAIMED = 'N' and cost_description = 'A'
+                and accessorial_code_xid = 'ULE_FUEL SURCHARGE CORRECTION')
+				then cost
+            else 0
+             end
+        ,0)),2),0) end FREIGHT_COST_BASIC_FTL,
+      case when SHIPMENT_NUMBER_ID is null then null else decode(transport_mode_gid,'LTL',round(sum(nvl(
+            case when cost_description = 'B' or
+            	 cost_description = 'S' or
+				(CLAIMED = 'N' and cost_description = 'A'
+                and accessorial_code_xid = 'ULE_FUEL SURCHARGE CORRECTION')
+				then cost
+            else 0
+             end
+        ,0)),2),0) end FREIGHT_COST_BASIC_LTL,                     
+		case when SHIPMENT_NUMBER_ID is null then null else round(sum(nvl(
+            case when CLAIMED = 'Y' 
+			     and (cost_description = 'A'
+				 and /*nvl(accessorial_code_xid,'X') = 'ULE_FUEL_REIMBURSEMENT'
+				 or*/ nvl(accessorial_code_xid,'X')  in ('ULE_FUEL SURCHARGE CORRECTION')
+				 or nvl(accessorial_code_xid,'X') like 'ULE_FUEL_SURCHARGE_%')
+		         then cost
+            else 0
+            end    
+        ,0)),2) end	  FUEL_SURCHARGE_STD, -- 2.16.2015 BTF-Fuel Decoupling / 05.26.2015 BTF-INC000096132722
+		case when SHIPMENT_NUMBER_ID is null then null else round(sum(nvl(
+            case when CLAIMED = 'Y' 
+			     and cost_description = 'A'
+				 and nvl(accessorial_code_xid,'X') = 'ULE_FUEL_REIMBURSEMENT'
+		         then cost
+            else 0
+            end    
+        ,0)),2) end    FUEL_REIMBURSEMENT, --Changed for CR002 06/09/2015
+   STREAM,
+   COMPANY,
+   PO_NUMBER,
+    LOADING_SPACE,  --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+    QUANTITY,        --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+    TYPE
+from
+(
+select transport_mode_gid,
+       cost_description,
+       accessorial_code_xid,
+       CLAIMED,
+       TRANSPORT_ORDER_NO ,
+       UNLOADING_DATE ,
+       SOURCE_LOCATION_ID ,
+       SOURCE_LOCATION_NAME ,
+       SOURCE_LOCATION_CITY ,
+       SOURCE_LOCATION_COUNTRY ,       
+       DEST_LOCATION_ID ,
+       DEST_LOCATION_NAME ,
+       DEST_LOCATION_CITY ,
+       DEST_LOCATION_COUNTRY ,
+       SHIPMENT_NUMBER_ID ,
+       REGION ,
+       PAYER_ID ,   
+       BILLING_PARTNER_ID ,
+       BILLING_PARTNER_NAME ,   
+       COST_CENTER ,
+       GENERAL_LEDGER_NUMBER ,
+       MATERIAL_TYPE ,   
+       LANE_ID ,
+       SERVICE_ID ,   
+       SERVICE_LEVEL ,
+       CURRENCY ,
+       max(cost) as cost,
+      STREAM , 
+      COMPANY,      
+      PO_NUMBER,
+      LOADING_SPACE,   --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+      QUANTITY,         --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+      LISTAGG(ship_unit_spec_name,',') WITHIN GROUP(ORDER BY TRANSPORT_ORDER_NO) TYPE
+from(
+    select
+        ship_unit_spec_name, 
+       transport_mode_gid,
+       cost_description,
+       accessorial_code_xid,
+       alloc_cost_seqno,
+       CLAIMED,
+       TRANSPORT_ORDER_NO ,
+       UNLOADING_DATE ,
+       SOURCE_LOCATION_ID ,
+       SOURCE_LOCATION_NAME ,
+       SOURCE_LOCATION_CITY ,
+       SOURCE_LOCATION_COUNTRY ,       
+       DEST_LOCATION_ID ,
+       DEST_LOCATION_NAME ,
+       DEST_LOCATION_CITY ,
+       DEST_LOCATION_COUNTRY ,
+       SHIPMENT_NUMBER_ID ,
+       REGION ,
+       PAYER_ID ,   
+       BILLING_PARTNER_ID ,
+       BILLING_PARTNER_NAME ,   
+       COST_CENTER ,
+       GENERAL_LEDGER_NUMBER ,
+       MATERIAL_TYPE ,   
+       LANE_ID ,
+       SERVICE_ID ,   
+       SERVICE_LEVEL ,
+       CURRENCY ,
+       max(cost) cost,
+      STREAM , 
+      COMPANY,      
+      PO_NUMBER, 
+      total_num_reference_units as LOADING_SPACE,  ----Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+      ship_unit_count as QUANTITY                  ---Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+    from accrual_v
+    GROUP BY 
+	SHIP_UNIT_COUNT,               --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+      TOTAL_NUM_REFERENCE_UNITS,   --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+       ship_unit_spec_name,
+       transport_mode_gid,
+       cost_description,
+       accessorial_code_xid,
+       alloc_cost_seqno,
+       CLAIMED,
+       TRANSPORT_ORDER_NO ,
+       UNLOADING_DATE ,
+       SOURCE_LOCATION_ID ,
+       SOURCE_LOCATION_NAME ,
+       SOURCE_LOCATION_CITY,
+       SOURCE_LOCATION_COUNTRY,       
+       DEST_LOCATION_ID ,
+       DEST_LOCATION_NAME ,
+       DEST_LOCATION_CITY,
+       DEST_LOCATION_COUNTRY,       
+       SHIPMENT_NUMBER_ID ,
+       REGION,
+       PAYER_ID ,   
+       BILLING_PARTNER_ID ,
+       BILLING_PARTNER_NAME ,   
+       COST_CENTER ,
+       GENERAL_LEDGER_NUMBER ,
+       MATERIAL_TYPE ,   
+       LANE_ID ,
+       SERVICE_ID ,   
+       SERVICE_LEVEL ,
+       CURRENCY,
+       STREAM , 
+       COMPANY,
+       PO_NUMBER)
+group by
+       transport_mode_gid,
+	   LOADING_SPACE,           --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+       QUANTITY,                --Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+       cost_description,
+       accessorial_code_xid,
+       alloc_cost_seqno,
+       CLAIMED,
+       TRANSPORT_ORDER_NO ,
+       UNLOADING_DATE ,
+       SOURCE_LOCATION_ID ,
+       SOURCE_LOCATION_NAME ,
+       SOURCE_LOCATION_CITY,
+       SOURCE_LOCATION_COUNTRY,       
+       DEST_LOCATION_ID ,
+       DEST_LOCATION_NAME ,
+       DEST_LOCATION_CITY,
+       DEST_LOCATION_COUNTRY,       
+       SHIPMENT_NUMBER_ID ,
+       REGION,
+       PAYER_ID ,   
+       BILLING_PARTNER_ID ,
+       BILLING_PARTNER_NAME ,   
+       COST_CENTER ,
+       GENERAL_LEDGER_NUMBER ,
+       MATERIAL_TYPE ,   
+       LANE_ID ,
+       SERVICE_ID ,   
+       SERVICE_LEVEL ,
+       CURRENCY,
+       STREAM , 
+       COMPANY,
+       PO_NUMBER
+ )  accrual_v2
+GROUP BY
+   transport_mode_gid,
+     LOADING_SPACE,    -----Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+     QUANTITY,         -------Harshed_OMS 17/09/2015 changed from INC000096913296(column quantity and loading space are doubled)
+   TRANSPORT_ORDER_NO ,
+   TRANSPORT_ORDER_NO ,
+   UNLOADING_DATE ,
+   SOURCE_LOCATION_ID ,
+   SOURCE_LOCATION_NAME ,
+   SOURCE_LOCATION_CITY,
+   SOURCE_LOCATION_COUNTRY,   
+   DEST_LOCATION_ID ,
+   DEST_LOCATION_NAME ,
+   DEST_LOCATION_CITY,
+   DEST_LOCATION_COUNTRY,   
+   SHIPMENT_NUMBER_ID ,
+   REGION ,
+   PAYER_ID ,   
+   BILLING_PARTNER_ID ,
+   BILLING_PARTNER_NAME ,   
+   COST_CENTER ,
+   GENERAL_LEDGER_NUMBER ,
+   MATERIAL_TYPE ,   
+   LANE_ID ,
+   SERVICE_ID ,   
+   SERVICE_LEVEL ,
+   CURRENCY ,
+   STREAM ,  
+   COMPANY,   
+   PO_NUMBER,
+   TYPE
+ORDER BY  
+    TRANSPORT_ORDER_NO,
+    SOURCE_LOCATION_ID,
+    SOURCE_LOCATION_NAME,
+    DEST_LOCATION_ID,
+    DEST_LOCATION_NAME,
+    SHIPMENT_NUMBER_ID,
+    MATERIAL_TYPE,
+    SERVICE_LEVEL,
+    BILLING_PARTNER_ID,
+    BILLING_PARTNER_NAME,
+    SERVICE_ID,
+    TYPE,
+    PAYER_ID
+ )    
+			]]>
+		</sqlStatement>	
+	</dataQuery>
+	<dataStructure>
+		<group name="VPD" source="VPD">
+			<element name="GL_USER" dataType="varchar2" value="GL_USER"/>
+		</group>	
+		<group name="ACCRUALS" source="ACCRUALS">
+			<element name="ORDER_RELEASE" dataType="varchar2" value="ORDER_RELEASE"/>
+			<element name="UNLOADING_DATE" dataType="varchar2" value="UNLOADING_DATE"/>
+			<element name="SOURCE_LOCATION_ID" dataType="varchar2" value="SOURCE_LOCATION_ID"/>
+			<element name="SOURCE_LOCATION_NAME" dataType="varchar2" value="SOURCE_LOCATION_NAME"/>
+			<element name="SOURCE_LOCATION_CITY" dataType="varchar2" value="SOURCE_LOCATION_CITY"/>
+			<element name="SOURCE_LOCATION_COUNTRY" dataType="varchar2" value="SOURCE_LOCATION_COUNTRY"/>
+			<element name="DEST_LOCATION_ID" dataType="varchar2" value="DEST_LOCATION_ID"/>
+			<element name="DEST_LOCATION_NAME" dataType="varchar2" value="DEST_LOCATION_NAME"/>
+			<element name="DEST_LOCATION_CITY" dataType="varchar2" value="DEST_LOCATION_CITY"/>
+			<element name="DEST_LOCATION_COUNTRY" dataType="varchar2" value="DEST_LOCATION_COUNTRY"/>
+			<element name="SHIPMENT_NUMBER_ID" dataType="varchar2" value="SHIPMENT_NUMBER_ID"/>
+			<element name="REGION" dataType="varchar2" value="REGION"/>
+			<element name="PAYER_ID" dataType="varchar2" value="PAYER_ID"/>
+			<element name="BILLING_PARTNER_ID" dataType="varchar2" value="BILLING_PARTNER_ID"/>
+			<element name="BILLING_PARTNER_NAME" dataType="varchar2" value="BILLING_PARTNER_NAME"/>
+			<element name="COST_CENTER" dataType="varchar2" value="COST_CENTER"/>
+			<element name="GENERAL_LEDGER_NUMBER" dataType="varchar2" value="GENERAL_LEDGER_NUMBER"/>
+			<element name="MATERIAL_TYPE" dataType="varchar2" value="MATERIAL_TYPE"/>
+			<element name="LANE_ID" dataType="varchar2" value="LANE_ID"/>
+			<element name="SERVICE_ID" dataType="varchar2" value="SERVICE_ID"/>
+			<element name="SERVICE_LEVEL" dataType="varchar2" value="SERVICE_LEVEL"/>
+			<element name="CURRENCY" dataType="varchar2" value="CURRENCY"/>
+			<element name="TOTAL_COST" dataType="varchar2" value="TOTAL_COST"/>
+			<element name="CLAIMED_COST" dataType="varchar2" value="CLAIMED_COST"/>
+			<element name="FREIGHT_COST_BASIC_FTL" dataType="varchar2" value="FREIGHT_COST_BASIC_FTL"/>
+			<element name="FREIGHT_COST_BASIC_LTL" dataType="varchar2" value="FREIGHT_COST_BASIC_LTL"/>
+			<element name="FUEL_SURCHARGE_STD" dataType="varchar2" value="FUEL_SURCHARGE_STD"/>
+			<element name="FUEL_REIMBURSEMENT" dataType="varchar2" value="FUEL_REIMBURSEMENT"/>
+			<element name="STREAM" dataType="varchar2" value="STREAM"/>
+			<element name="COMPANY" dataType="varchar2" value="COMPANY"/>
+			<element name="PO_NUMBER" dataType="varchar2" value="PO_NUMBER"/>
+			<element name="LOADING_SPACE" dataType="varchar2" value="LOADING_SPACE"/>
+			<element name="QUANTITY" dataType="varchar2" value="QUANTITY"/>
+			<element name="TYPE" dataType="varchar2" value="TYPE"/>
+		</group>
+	</dataStructure>
+</dataTemplate>
