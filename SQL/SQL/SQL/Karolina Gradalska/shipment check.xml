@@ -1,0 +1,537 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<dataTemplate name="SHIPMENT_CHECK" version="1.0">
+   <parameters>
+	 <parameter name="P_GL_USER" dataType="character"/>
+     	 <parameter name="P_SHIPMENT_GID" dataType="character"/>
+	 </parameters>
+   <dataQuery>
+      <sqlStatement name="CHECK">
+      <![CDATA[
+
+
+
+
+
+select DISTINCT SH.SHIPMENT_GID 														AS SHIPMENT_GID,
+ORD.ORDER_RELEASE_GID 														AS ORDER_RELEASE_GID,
+(SELECT  NVL(SS.STATUS_VALUE_GID,'-')
+FROM SHIPMENT_STATUS SS
+WHERE SH.SHIPMENT_GID = SS.SHIPMENT_GID AND
+SS.STATUS_TYPE_GID IN ('UGO.SHIPMENT_COST','ULE/SE.SHIPMENT_COST')
+)                                                                           AS SHIPMENT_COST_STATUS,
+
+(SELECT   NVL(SS.STATUS_VALUE_GID,'-')
+FROM SHIPMENT_STATUS SS
+WHERE SH.SHIPMENT_GID = SS.SHIPMENT_GID AND
+SS.STATUS_TYPE_GID IN ('UGO.INVOICE_READY','ULE/SE.INVOICE_READY')
+)                                                                           AS INVOICE_STATUS,
+
+(SELECT  NVL(SS.STATUS_VALUE_GID,'-')
+FROM SHIPMENT_STATUS SS
+WHERE SH.SHIPMENT_GID = SS.SHIPMENT_GID AND
+SS.STATUS_TYPE_GID IN ('UGO.FINANCE','ULE/SE.FINANCE')
+)                                                                          AS FINANCE_STATUS,
+
+(SELECT  NVL(SS.STATUS_VALUE_GID,'-')
+FROM SHIPMENT_STATUS SS
+WHERE SH.SHIPMENT_GID = SS.SHIPMENT_GID AND
+SS.STATUS_TYPE_GID = 'UGO.TRANSPORT CANCELLATION'
+)                                                                          AS TRANSPORT_CANCELLATION
+,TO_CHAR(sh.start_time,'YYYY-MM-DD')                                       AS SH_START_TIME
+,TO_CHAR(sh.end_time,'YYYY-MM-DD')                                       AS SH_END_TIME
+
+,(SELECT  TO_CHAR(SS.UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS')
+FROM SHIPMENT_STATUS SS
+WHERE SH.SHIPMENT_GID = SS.SHIPMENT_GID AND
+SS.STATUS_TYPE_GID = 'UGO.FINANCE'
+)                                                                         AS FINANCE_STATUS_UPDATE_DATE,
+
+(SELECT  TO_CHAR(ST.ACTUAL_ARRIVAL,'DD-MM-YYYY HH24:MM:SS')
+FROM SHIPMENT_STOP ST
+WHERE SH.SHIPMENT_GID = ST.SHIPMENT_GID
+AND st.stop_num        =
+    (
+          SELECT
+            MAX (sst.stop_num)
+          FROM
+            shipment_stop sst
+          WHERE
+            sst.shipment_gid = st.shipment_gid
+        )
+	)		                                                                                                                AS LAST_STOP_DATE
+
+,(SELECT loc.location_name
+FROM location loc
+WHERE loc.location_gid = ord.source_location_gid
+)                                                                                                                           AS SOURCE_LOC_NAME
+,(SELECT loc.location_name
+FROM location loc
+WHERE loc.location_gid = ord.dest_location_gid
+)                                                                                                                           AS DEST_LOC_NAME
+,(SELECT ORRF.order_release_refnum_value
+FROM ORDER_RELEASE_REFNUM ORRF
+WHERE ORRF.ORDER_RELEASE_GID = ORD.ORDER_RELEASE_GID
+AND ORRF.order_release_refnum_qual_gid IN ('UGO.UGO_FINAL_BILLING_NUMBER_SOURCE', 'UGO.UGO_FINAL_BILLING_NUMBER_DEST') )       						 				AS FB_NUMBER
+,(SELECT ORRF.order_release_refnum_value
+FROM ORDER_RELEASE_REFNUM ORRF
+WHERE ORRF.ORDER_RELEASE_GID = ORD.ORDER_RELEASE_GID
+AND ORRF.order_release_refnum_qual_gid = 'UGO.ULE_CONTAINER_NO' )       						 				AS ULE_CONTAINER_NO
+,(SELECT ORRF.order_release_refnum_value
+FROM ORDER_RELEASE_REFNUM ORRF
+WHERE ORRF.ORDER_RELEASE_GID = ORD.ORDER_RELEASE_GID
+AND ORRF.order_release_refnum_qual_gid = 'UGO.ULE_CONTAINER_SEAL_NO' )       						 				AS ULE_CONTAINER_SEAL_NO,
+
+sh.insert_user 																											AS SHIPMENT_CREATOR
+from
+
+ORDER_RELEASE ORD LEFT OUTER JOIN ORDER_MOVEMENT OM ON ORD.ORDER_RELEASE_GID = OM.ORDER_RELEASE_GID LEFT OUTER JOIN SHIPMENT SH ON OM.SHIPMENT_GID = SH.SHIPMENT_GID
+
+WHERE
+:P_SHIPMENT_GID = SH.SHIPMENT_GID
+--ROWNUM<20
+--AND SH.DOMAIN_NAME = 'UGO'
+--AND SH.INSERT_DATE >= TO_DATE('2016-06-01','YYYY-MM-DD')
+
+       ]]>
+      </sqlStatement>
+      <sqlStatement name="SHIPMENT_COST">
+      <![CDATA[
+
+SELECT SHIPMENT_GID, COST_TYPE, ROUND(COST,2) COST
+, COST_GID,ACCESSORIAL_CODE_GID,IS_COST_FIXED,PROCESS_AS_FLOW_THRU
+, IS_WEIGHTED, DOMAIN_NAME
+, INSERT_USER, TO_CHAR(INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE
+, UPDATE_USER, TO_CHAR(UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS') UPDATE_DATE
+
+FROM SHIPMENT_COST
+
+
+
+
+WHERE
+:P_SHIPMENT_GID = SHIPMENT_GID
+
+ORDER BY INSERT_DATE ASC
+
+
+
+
+       ]]>
+      </sqlStatement>
+<sqlStatement name="INVOICE_READY_CHECKS">
+      <![CDATA[
+
+select DISTINCT
+SHIPMENT_GID,
+SHIPMENT_COST,
+FINANCE,
+INVOICE,
+MISMACTH_CURRENCY,
+MISSING_ALLOCATION,
+MISSING_ACTUAL,
+MISSING_BASE_COST,
+IS_PRE_FINAL_BILLING_REFNUM,
+MISSING_OR_TEMPLATE_ORDERS,
+MISMACTH_CURRENCY_COST_B_A,
+MISSING_FINANCE_CONTACT,
+DOUBLE_FINANCE_REFNUM,
+MISSING_FINANCE_REFNUM
+
+
+FROM
+ugo_VIEW_INVOICE_STATUS INV
+WHERE
+SHIPMENT_GID = :P_SHIPMENT_GID
+--ROWNUM<20
+
+       ]]>
+      </sqlStatement>
+
+	        <sqlStatement name="SHIPMENT_STATUS">
+      <![CDATA[
+
+SELECT SHIPMENT_GID, STATUS_TYPE_GID
+, STATUS_VALUE_GID, DOMAIN_NAME
+, INSERT_USER,  TO_CHAR(INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE
+, UPDATE_USER, TO_CHAR(UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS') UPDATE_DATE
+
+FROM SHIPMENT_STATUS
+
+
+WHERE
+:P_SHIPMENT_GID = SHIPMENT_GID
+ORDER BY STATUS_TYPE_GID ASC
+
+
+
+
+
+       ]]>
+      </sqlStatement>
+<sqlStatement name="SHIPMENT_REFNUM">
+      <![CDATA[
+
+SELECT SHIPMENT_GID, SHIPMENT_REFNUM_QUAL_GID, SHIPMENT_REFNUM_VALUE
+, DOMAIN_NAME, INSERT_USER, TO_CHAR(INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE, UPDATE_USER, TO_CHAR(UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS') UPDATE_DATE
+
+FROM SHIPMENT_REFNUM
+WHERE
+:P_SHIPMENT_GID = SHIPMENT_GID
+
+
+
+
+
+
+       ]]>
+      </sqlStatement>
+	   <sqlStatement name="SHIPMENT_REMARK">
+		   <![CDATA[
+
+SELECT SHIPMENT_GID
+,REMARK_SEQUENCE
+,REMARK_QUAL_GID
+,REMARK_TEXT
+,INSERT_USER
+,TO_CHAR(INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE
+,UPDATE_USER, TO_CHAR(UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS') UPDATE_DATE
+
+FROM SHIPMENT_REMARK
+
+WHERE
+:P_SHIPMENT_GID = SHIPMENT_GID
+
+       ]]>
+	   </sqlStatement>
+ <sqlStatement name="SHIPMENT_EVENTS">
+      <![CDATA[
+
+select c.shipment_gid,
+C.SHIPMENT_STOP_NUM,
+a.status_code_gid,
+(SELECT STATUS_C.DESCRIPTION FROM  BS_STATUS_CODE STATUS_C WHERE  STATUS_C.BS_STATUS_CODE_GID = a.status_code_gid) STATUS,
+C.EVENT_LOCATION_GID,
+TO_CHAR(A.EVENTDATE,'DD-MM-YYYY HH24:MM:SS') EVENTDATE,
+A.STATUS_REASON_CODE_GID,
+(SELECT  REASON_C.DESCRIPTION FROM  BS_REASON_CODE REASON_C WHERE  REASON_C.BS_REASON_CODE_GID = A.STATUS_REASON_CODE_GID) REASON_CODE,
+TO_CHAR(A.INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE,
+A.INSERT_USER
+
+
+                                         FROM   ie_shipmentstatus A,
+                                                ss_status_history C
+
+
+
+                                            where 1=1 and
+
+                                            A.i_transaction_no = C.i_transaction_no and
+
+
+
+
+                                           c.shipment_gid = :P_SHIPMENT_GID
+ORDER BY INSERT_DATE ASC
+
+
+
+       ]]>
+      </sqlStatement>
+<sqlStatement name="SHIPMENT_TENDER">
+      <![CDATA[
+
+SELECT
+SH_T_COLL_BOV.SHIPMENT_XID SHIPMENT_ID,
+T_COLL_STAT.STATUS_TYPE_GID,
+ T_COLL_STAT.STATUS_VALUE_GID,
+SH_T_COLL_BOV.TENDER_SERVPROV_GID TSP_ID,
+SH_T_COLL_BOV.TENDER_ACCEPTANCE_CODE CODE,
+SH_T_COLL_BOV.TENDER_TRANSACTION_NO TRANSACTION_ID,
+T_COLL_STAT.INSERT_USER ,
+TO_CHAR(T_COLL_STAT.INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE,
+T_COLL_STAT.UPDATE_USER ,
+TO_CHAR(T_COLL_STAT.UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS') UPDATE_DATE ,
+T_COLL.TENDER_TYPE TENDER_TYPE
+FROM
+SHIP_TENDER_COLLAB_BOV SH_T_COLL_BOV,
+TENDER_COLLABORATION_STATUS T_COLL_STAT,
+TENDER_COLLABORATION T_COLL
+
+WHERE
+SH_T_COLL_BOV.TENDER_TRANSACTION_NO = T_COLL_STAT.I_TRANSACTION_NO
+--AND T_COLL_STAT.STATUS_TYPE_GID = 'UGO.TENDER.SECURE RESOURCES'
+--AND T_COLL_STAT.STATUS_VALUE_GID = 'UGO.TENDER.SECURE RESOURCES_ACCEPTED'
+AND T_COLL.I_TRANSACTION_NO = SH_T_COLL_BOV.TENDER_TRANSACTION_NO
+AND SH_T_COLL_BOV.SHIPMENT_XID = rpt_general.f_remove_domain(:P_SHIPMENT_GID)
+
+
+       ]]>
+      </sqlStatement>
+<sqlStatement name="ORDER_REFNUMS">
+      <![CDATA[
+
+select o.order_release_gid,
+o.ORDER_RELEASE_REFNUM_QUAL_GID,
+o.ORDER_RELEASE_REFNUM_VALUE,
+TO_CHAR(O.INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE,
+o.INSERT_USER,
+TO_CHAR(O.UPDATE_DATE,'DD-MM-YYYY HH24:MM:SS') UPDATE_DATE,
+O.UPDATE_USER
+from order_release_refnum o inner join order_movement om on (o.order_release_gid = om.order_release_gid and om.shipment_gid = :P_SHIPMENT_GID)
+ORDER BY 1, INSERT_DATE DESC
+
+	   ]]>
+      </sqlStatement>
+<sqlStatement name="INVOICE_EXCLUDED">
+      <![CDATA[
+
+SELECT   sh.shipment_gid 																			AS SHIPMENT_GID,
+       (SELECT   COUNT ( * )
+          FROM   shipment sh1
+         WHERE   sh1.shipment_gid =
+                    sh.shipment_gid
+                 AND sh1.servprov_gid =
+                       'ULE.T1055014') 																AS CUSTOMERPICKUP,
+       (SELECT   COUNT ( * )
+          FROM   shipment sh2, shipment_cost sc2
+         WHERE   sh2.shipment_gid =
+                    sh.shipment_gid
+                 AND sh2.shipment_gid =
+                       sc2.shipment_gid
+                 AND sh2.transport_mode_gid =
+                       'PARCEL'
+                 AND sc2.cost = 0)
+																									AS PARCEL,
+       (SELECT   COUNT ( * )
+          FROM      shipment sh3
+                 INNER JOIN
+                    location_role_profile lrp
+                 ON sh3.dest_location_gid =
+                       lrp.location_gid
+         WHERE   sh3.shipment_gid =
+                    sh.shipment_gid
+                 AND lrp.location_role_gid =
+                       'DECONSOLIDATION_POOL')
+																									AS CARRIER,
+       (SELECT   COUNT ( * )
+          FROM   shipment sh4, shipment_refnum sr
+         WHERE   sh.shipment_gid =
+                    sh4.shipment_gid
+                 AND sh4.shipment_gid =
+                       sr.shipment_gid
+                 AND sr.shipment_refnum_qual_gid =
+                       'ULE.ULE_LEG_POSITION'
+                 AND sr.shipment_refnum_value =
+                       'FIRST LEG'
+                 AND EXISTS
+                       (SELECT   1
+                          FROM   itinerary it,
+                                 itinerary_detail itd
+                         WHERE   sh.itinerary_gid =
+                                    it.itinerary_gid
+                                 AND it.itinerary_gid =
+                                       itd.itinerary_gid
+                                 AND itd.sequence_no >
+                                       1))
+																									AS INTERMODAL
+FROM   shipment sh
+WHERE sh.SHIPMENT_GID = :P_SHIPMENT_GID
+
+
+       ]]>
+      </sqlStatement>
+<sqlStatement name="ORDER_DETAILS">
+      <![CDATA[
+
+SELECT O.ORDER_RELEASE_GID
+,O.PLAN_FROM_LOCATION_GID
+,O.PORT_OF_LOAD_LOCATION_GID
+,O.PORT_OF_DIS_LOCATION_GID
+,O.PLAN_TO_LOCATION_GID
+,O.DEST_LOCATION_GID
+,TO_CHAR(O.EARLY_PICKUP_DATE,'DD-MM-YYYY HH24:MI:SS') 				EARLY_PICKUP_DATE
+,TO_CHAR(O.LATE_PICKUP_DATE,'DD-MM-YYYY HH24:MI:SS') 				LATE_PICKUP_DATE
+,TO_CHAR(O.EARLY_DELIVERY_DATE,'DD-MM-YYYY HH24:MI:SS') 										EARLY_DELIVERY_DATE
+,TO_CHAR(O.LATE_DELIVERY_DATE,'DD-MM-YYYY HH24:MI:SS') 				LATE_DELIVERY_DATE
+,(SELECT OR_REF.ORDER_RELEASE_REFNUM_VALUE
+FROM ORDER_RELEASE_REFNUM OR_REF
+WHERE OR_REF.ORDER_RELEASE_GID = O.ORDER_RELEASE_GID
+AND OR_REF.ORDER_RELEASE_REFNUM_QUAL_GID = 'ULE.ULE_SERVICE_TYPE'
+)																							SERVICE_TYPE
+,O.EQUIPMENT_GROUP_GID
+
+
+
+FROM ORDER_RELEASE O
+,ORDER_MOVEMENT OM
+
+
+WHERE
+O.ORDER_RELEASE_GID = OM.ORDER_RELEASE_GID
+AND OM.SHIPMENT_GID = :P_SHIPMENT_GID
+
+	   ]]>
+      </sqlStatement>
+   </dataQuery>
+   <dataStructure>
+
+	   <group name="CHECK" source="CHECK">
+				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+                 <element name="ORDER_RELEASE_GID" value="ORDER_RELEASE_GID"/>
+                 <element name="SHIPMENT_COST_STATUS" value="SHIPMENT_COST_STATUS"/>
+                 <element name="INVOICE_STATUS" value="INVOICE_STATUS"/>
+                 <element name="FINANCE_STATUS" value="FINANCE_STATUS"/>
+                 <element name="TRANSPORT_CANCELLATION" value="TRANSPORT_CANCELLATION"/>
+                 <element name="SH_START_TIME" value="SH_START_TIME"/>
+                 <element name="SH_END_TIME" value="SH_END_TIME"/>
+                 <element name="FINANCE_STATUS_UPDATE_DATE" value="FINANCE_STATUS_UPDATE_DATE"/>
+                 <element name="LAST_STOP_DATE" value="LAST_STOP_DATE"/>
+                 <element name="SOURCE_LOC_NAME" value="SOURCE_LOC_NAME"/>
+                 <element name="DEST_LOC_NAME" value="DEST_LOC_NAME"/>
+                 <element name="FB_NUMBER" value="FB_NUMBER"/>
+                 <element name="ULE_CONTAINER_NO" value="ULE_CONTAINER_NO"/>
+                 <element name="ULE_CONTAINER_SEAL_NO" value="ULE_CONTAINER_SEAL_NO"/>
+                  <element name="SHIPMENT_CREATOR" value="SHIPMENT_CREATOR"/>
+
+		 </group>
+		 <group name="SHIPMENT_COST" source="SHIPMENT_COST">
+				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+				 <element name="COST_TYPE" value="COST_TYPE"/>
+				 <element name="COST" value="COST"/>
+				 <element name="COST_GID" value="COST_GID"/>
+				 <element name="ACCESSORIAL_CODE_GID" value="ACCESSORIAL_CODE_GID"/>
+				 <element name="IS_COST_FIXED" value="IS_COST_FIXED"/>
+				 <element name="IS_WEIGHTED" value="IS_WEIGHTED"/>
+				 <element name="PROCESS_AS_FLOW_THRU" value="PROCESS_AS_FLOW_THRU"/>
+				 <element name="DOMAIN_NAME" value="DOMAIN_NAME"/>
+				 <element name="INSERT_USER" value="INSERT_USER"/>
+				 <element name="INSERT_DATE" value="INSERT_DATE"/>
+				 <element name="UPDATE_USER" value="UPDATE_USER"/>
+				 <element name="UPDATE_DATE" value="UPDATE_DATE"/>
+
+
+		 </group>
+        <group name="INVOICE_READY_CHECKS" source="INVOICE_READY_CHECKS">
+				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+				 <element name="SHIPMENT_COST" value="SHIPMENT_COST"/>
+				 <element name="FINANCE" value="FINANCE"/>
+				 <element name="INVOICE" value="INVOICE"/>
+				 <element name="MISMACTH_CURRENCY" value="MISMACTH_CURRENCY"/>
+				 <element name="MISSING_ALLOCATION" value="MISSING_ALLOCATION"/>
+				 <element name="MISSING_ACTUAL" value="MISSING_ACTUAL"/>
+				 <element name="MISSING_BASE_COST" value="MISSING_BASE_COST"/>
+				 <element name="IS_PRE_FINAL_BILLING_REFNUM" value="IS_PRE_FINAL_BILLING_REFNUM"/>
+				 <element name="MISSING_OR_TEMPLATE_ORDERS" value="MISSING_OR_TEMPLATE_ORDERS"/>
+				 <element name="MISMACTH_CURRENCY_COST_B_A" value="MISMACTH_CURRENCY_COST_B_A"/>
+				 <element name="MISSING_FINANCE_CONTACT" value="MISSING_FINANCE_CONTACT"/>
+				 <element name="DOUBLE_FINANCE_REFNUM" value="DOUBLE_FINANCE_REFNUM"/>
+				 <element name="MISSING_FINANCE_REFNUM" value="MISSING_FINANCE_REFNUM"/>
+
+
+		 </group>
+
+
+
+		 <group name="SHIPMENT_STATUS" source="SHIPMENT_STATUS">
+         				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+         				 <element name="STATUS_TYPE_GID" value="STATUS_TYPE_GID"/>
+         				 <element name="STATUS_VALUE_GID" value="STATUS_VALUE_GID"/>
+         				 <element name="DOMAIN_NAME" value="DOMAIN_NAME"/>
+         				 <element name="INSERT_USER" value="INSERT_USER"/>
+         				 <element name="INSERT_DATE" value="INSERT_DATE"/>
+         				 <element name="UPDATE_USER" value="UPDATE_USER"/>
+         				 <element name="UPDATE_DATE" value="UPDATE_DATE"/>
+
+
+         </group>
+      <group name="SHIPMENT_REFNUM" source="SHIPMENT_REFNUM">
+				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+				 <element name="SHIPMENT_REFNUM_QUAL_GID" value="SHIPMENT_REFNUM_QUAL_GID"/>
+				 <element name="SHIPMENT_REFNUM_VALUE" value="SHIPMENT_REFNUM_VALUE"/>
+				 <element name="DOMAIN_NAME" value="DOMAIN_NAME"/>
+				 <element name="INSERT_USER" value="INSERT_USER"/>
+				 <element name="INSERT_DATE" value="INSERT_DATE"/>
+				 <element name="UPDATE_USER" value="UPDATE_USER"/>
+				 <element name="UPDATE_DATE" value="UPDATE_DATE"/>
+
+
+		</group>
+	   <group name="SHIPMENT_REMARK" source="SHIPMENT_REMARK">
+		   <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+		   <element name="REMARK_SEQUENCE" value="REMARK_SEQUENCE"/>
+		   <element name="REMARK_QUAL_GID" value="REMARK_QUAL_GID"/>
+		   <element name="REMARK_TEXT" value="REMARK_TEXT"/>
+		   <element name="DOMAIN_NAME" REMARK_TEXT="DOMAIN_NAME"/>
+		   <element name="INSERT_USER" value="INSERT_USER"/>
+		   <element name="INSERT_DATE" value="INSERT_DATE"/>
+		   <element name="UPDATE_DATE" value="UPDATE_DATE"/>
+
+	   </group>
+		<group name="SHIPMENT_EVENTS" source="SHIPMENT_EVENTS">
+				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+				 <element name="SHIPMENT_STOP_NUM" value="SHIPMENT_STOP_NUM"/>
+				 <element name="status_code_gid" value="status_code_gid"/>
+				 <element name="STATUS" value="STATUS"/>
+				 <element name="EVENT_LOCATION_GID" value="EVENT_LOCATION_GID"/>
+				 <element name="EVENTDATE" value="EVENTDATE"/>
+				 <element name="STATUS_REASON_CODE_GID" value="STATUS_REASON_CODE_GID"/>
+				 <element name="REASON_CODE" value="REASON_CODE"/>
+				 <element name="INSERT_USER" value="INSERT_USER"/>
+				 <element name="INSERT_DATE" value="INSERT_DATE"/>
+
+
+
+		 </group>
+		<group name="SHIPMENT_TENDER" source="SHIPMENT_TENDER">
+				 <element name="SHIPMENT_ID" value="SHIPMENT_ID"/>
+				 <element name="STATUS_TYPE_GID" value="STATUS_TYPE_GID"/>
+				 <element name="STATUS_VALUE_GID" value="STATUS_VALUE_GID"/>
+				 <element name="TSP_ID" value="TSP_ID"/>
+				 <element name="CODE" value="CODE"/>
+				 <element name="TRANSACTION_ID" value="TRANSACTION_ID"/>
+				 <element name="DOMAIN_NAME" value="DOMAIN_NAME"/>
+				 <element name="INSERT_USER" value="INSERT_USER"/>
+				 <element name="INSERT_DATE" value="INSERT_DATE"/>
+				 <element name="UPDATE_USER" value="UPDATE_USER"/>
+				 <element name="UPDATE_DATE" value="UPDATE_DATE"/>
+				 <element name="TENDER_TYPE" value="TENDER_TYPE"/>
+
+
+		 </group>
+		 <group name="ORDER_REFNUMS" source="ORDER_REFNUMS">
+				 <element name="ORDER_RELEASE_GID" value="order_release_gid"/>
+				 <element name="ORDER_RELEASE_REFNUM_QUAL_GID" value="ORDER_RELEASE_REFNUM_QUAL_GID"/>
+				 <element name="ORDER_RELEASE_REFNUM_VALUE" value="ORDER_RELEASE_REFNUM_VALUE"/>
+				 <element name="INSERT_DATE" value="INSERT_DATE"/>
+				 <element name="INSERT_USER" value="INSERT_USER"/>
+				 <element name="UPDATE_DATE" value="UPDATE_DATE"/>
+				 <element name="UPDATE_USER" value="UPDATE_USER"/>
+
+
+		 </group>
+		<group name="INVOICE_EXCLUDED" source="INVOICE_EXCLUDED">
+				 <element name="SHIPMENT_GID" value="SHIPMENT_GID"/>
+				 <element name="CUSTOMERPICKUP" value="CUSTOMERPICKUP"/>
+				 <element name="PARCEL" value="PARCEL"/>
+				 <element name="CARRIER" value="CARRIER"/>
+				 <element name="INTERMODAL" value="INTERMODAL"/>
+
+		 </group>
+		 <group name="ORDER_DETAILS" source="ORDER_DETAILS">
+				 <element name="ORDER_RELEASE_GID" value="ORDER_RELEASE_GID"/>
+				 <element name="PLAN_FROM_LOCATION_GID" value="PLAN_FROM_LOCATION_GID"/>
+				 <element name="PORT_OF_LOAD_LOCATION_GID" value="PORT_OF_LOAD_LOCATION_GID"/>
+				 <element name="PORT_OF_DIS_LOCATION_GID" value="PORT_OF_DIS_LOCATION_GID"/>
+				 <element name="PLAN_TO_LOCATION_GID" value="PLAN_TO_LOCATION_GID"/>
+				 <element name="DEST_LOCATION_GID" value="DEST_LOCATION_GID"/>
+				 <element name="EARLY_PICKUP_DATE" value="EARLY_PICKUP_DATE"/>
+				 <element name="LATE_PICKUP_DATE" value="LATE_PICKUP_DATE"/>
+				 <element name="EARLY_DELIVERY_DATE" value="EARLY_DELIVERY_DATE"/>
+				 <element name="LATE_DELIVERY_DATE" value="LATE_DELIVERY_DATE"/>
+				 <element name="SERVICE_TYPE" value="SERVICE_TYPE"/>
+				 <element name="EQUIPMENT_GROUP_GID" value="EQUIPMENT_GROUP_GID"/>
+
+
+		 </group>
+   </dataStructure>
+</dataTemplate>
