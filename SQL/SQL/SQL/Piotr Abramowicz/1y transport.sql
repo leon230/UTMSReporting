@@ -91,20 +91,20 @@ FROM shipment sh
 WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
-AND sh.start_time >= to_date('2016-01-01','YYYY-MM-DD')
-AND sh.start_time < to_date('2016-02-01','YYYY-MM-DD')
+AND sh.start_time >= to_date('2016-04-01','YYYY-MM-DD')
+AND sh.start_time < to_date('2016-05-01','YYYY-MM-DD')
 
 AND om.shipment_gid = sh.shipment_gid
 AND orls.order_release_gid = om.order_release_gid
 -- AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
 -- AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
 
---AND NOT exists
---	(SELECT 1
---		FROM shipment_refnum sh_ref_1
---		WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
---		AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
---		AND sh_ref_1.shipment_gid = SH.shipment_gid)
+AND NOT exists
+	(SELECT 1
+		FROM shipment_refnum sh_ref_1
+		WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
+		AND sh_ref_1.shipment_Refnum_Value = 'PRIMARY'
+		AND sh_ref_1.shipment_gid = SH.shipment_gid)
 		
 		
 AND sh.domain_name <> 'UGO'
