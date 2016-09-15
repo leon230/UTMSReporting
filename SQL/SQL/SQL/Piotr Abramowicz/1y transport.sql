@@ -58,7 +58,7 @@ AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
 
                 -- WHERE alloc_d.SHIPMENT_GID = sh.SHIPMENT_GID
                 -- AND alloc_d.IS_WEIGHTED = 'N'
-                -- AND alloc_d.COST_TYPE in ('B','A')f
+                -- AND alloc_d.COST_TYPE in ('B','A')
 -- )),0)																											                                                    TOTAL_COST_EUR
 ,nvl(TRIM(
 (SELECT 
