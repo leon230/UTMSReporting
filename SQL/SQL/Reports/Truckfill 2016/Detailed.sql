@@ -51,6 +51,9 @@ ELSE sh.total_num_reference_units			END,0)),0)
     ,33
 )	                                                                                                                                                         PFS
 ,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
+,CASE WHEN sh.rate_geo_gid is null then 'N/A'
+ELSE to_char(ROUND(sh.TOTAL_VOLUME_BASE*0.02831685))
+END                                                                                                                                                TOTAL_VOLUME_CUM
 
 ,NVL(
 NULLIF((
@@ -265,10 +268,11 @@ WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ))																																                                                RECEIVING_MSO
-rd.flatto                                                                                                                                                   FLATTO
+,rd.flatto                                                                                                                                                   FLATTO
 ,rd.pfs																											                                            PFS
 
 ,rd.weight																															                        PALLET_GROSS_WEIGHT_KG
+,rd.TOTAL_VOLUME_CUM                                                                                                                                            TOTAL_VOLUME_CUM
 
 ,rd.truck_capacity_pfs																																		TRUCK_CAPACITY_PFS
 
@@ -339,8 +343,8 @@ FROM shipment sh
 WHERE 1=1
 AND s_loc.location_gid = sh.source_location_gid
 AND d_loc.location_gid = sh.dest_location_gid
--- AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
--- AND TO_CHAR(sh.start_time,'MM') = :P_MONTH
+ AND TO_CHAR(sh.start_time,'YYYY') = :P_YEAR
+ AND TO_CHAR(sh.start_time,'MM') = :P_MONTH
  AND sh.source_location_gid = NVL(:P_SOURCE,sh.source_location_gid)
  AND sh.dest_location_gid = NVL(:P_DEST,sh.dest_location_gid)
 
@@ -364,8 +368,8 @@ FROM location_refnum loc_ref
 WHERE loc_ref.location_gid = sh.dest_location_gid
 AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 ),'ALL')
-AND (SH.START_TIME) >= TO_DATE('2016-02-01','YYYY-MM-DD')
-AND (SH.START_TIME) < TO_DATE('2016-05-10','YYYY-MM-DD')
+--AND (SH.START_TIME) >= TO_DATE('2016-01-01','YYYY-MM-DD')
+--AND (SH.START_TIME) < TO_DATE('2016-01-10','YYYY-MM-DD')
  --AND TO_CHAR(sh.start_time,'MM') <= TO_CHAR(TRUNC(SYSDATE,'MM')-1,'MM')
 AND NOT exists
 	(SELECT 1
@@ -394,6 +398,5 @@ and EXISTS (SELECT 1
 		AND SH_STATUS.STATUS_TYPE_GID = 'ULE/PR.TRANSPORT CANCELLATION'
 		AND SH_STATUS.STATUS_VALUE_GID = 'ULE/PR.NOT CANCELLED'
 		)
-
 
 --AND SH.SOURCE_LOCATION_GID IN ('ULE.V205315','ULE.V205283','ULE.V205292','ULE.V214488 ','ULE.V50474879 ','ULE.V162314','ULE.V207493')

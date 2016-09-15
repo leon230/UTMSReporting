@@ -11,8 +11,7 @@
 
 
         <sqlStatement name="Q_CATEGORY">
-            <![CDATA[
-SELECT
+            <![CDATA[SELECT
 NVL(temp.DISPATCH_CATEGORY,'OTHER')																				DISPATCH_CATEGORY
 -- ,temp.ftl_ltl																									FTL_LTL
 -- ,temp.sh_start_time																								START_TIME
@@ -210,6 +209,13 @@ AND (SELECT listagg(s_eq.equipment_group_gid,'/') within group (order by sh.ship
  sh.shipment_gid = sh_eq_j.shipment_gid
  AND sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid
  	) <> 'UNLIMITED'
+--ADDITIONAL ONLY FOR CATEGORY
+ AND NOT exists (SELECT 1
+ FROM shipment_refnum sh_ref
+ WHERE sh_ref.shipment_gid = sh.shipment_gid
+ AND sh_ref.shipment_refnum_qual_gid = 'ULE.ULE_FUNCTIONAL_REGION'
+ AND sh_ref.shipment_refnum_value IN ('INBOUND','BULK')
+ )
 )
 
 
@@ -440,6 +446,7 @@ NVL(temp.DISPATCH_CATEGORY,'OTHER')
 --TODO number of shipments to category,lanes
 --TODO round PFS
 --TODO jesli jedna dodatkowa paleta > truck weight capacity -> 100% waga
+
 
 
 ]]>
