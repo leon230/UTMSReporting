@@ -32,6 +32,7 @@ FROM shipment sh
 LEFT OUTER JOIN shipment_s_equipment_join sh_eq_j ON (sh.shipment_gid = sh_eq_j.shipment_gid)
 LEFT OUTER JOIN s_equipment s_eq ON (sh_eq_j.s_equipment_gid = s_eq.s_equipment_gid)
 LEFT OUTER JOIN equipment_group eg ON (eg.equipment_group_gid = s_eq.equipment_group_gid)
+
 ,order_release orls
 LEFT OUTER JOIN ship_unit su ON (su.order_release_gid = orls.order_release_gid)
 LEFT OUTER JOIN ship_unit_line sul ON (sul.ship_unit_gid = su.ship_unit_gid)

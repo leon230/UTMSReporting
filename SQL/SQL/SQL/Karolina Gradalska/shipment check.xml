@@ -68,15 +68,15 @@ WHERE loc.location_gid = ord.source_location_gid
 FROM location loc
 WHERE loc.location_gid = ord.dest_location_gid
 )                                                                                                                           AS DEST_LOC_NAME
-,(SELECT ORRF.order_release_refnum_value
+,(SELECT listagg(ORRF.order_release_refnum_value,',') within group (order by ORD.ORDER_RELEASE_GID)
 FROM ORDER_RELEASE_REFNUM ORRF
 WHERE ORRF.ORDER_RELEASE_GID = ORD.ORDER_RELEASE_GID
 AND ORRF.order_release_refnum_qual_gid IN ('UGO.UGO_FINAL_BILLING_NUMBER_SOURCE', 'UGO.UGO_FINAL_BILLING_NUMBER_DEST') )       						 				AS FB_NUMBER
-,(SELECT ORRF.order_release_refnum_value
+,( SELECT listagg(ORRF.order_release_refnum_value,',') within group (order by ORD.ORDER_RELEASE_GID)
 FROM ORDER_RELEASE_REFNUM ORRF
 WHERE ORRF.ORDER_RELEASE_GID = ORD.ORDER_RELEASE_GID
 AND ORRF.order_release_refnum_qual_gid = 'UGO.ULE_CONTAINER_NO' )       						 				AS ULE_CONTAINER_NO
-,(SELECT ORRF.order_release_refnum_value
+,( SELECT listagg(ORRF.order_release_refnum_value,',') within group (order by ORD.ORDER_RELEASE_GID)
 FROM ORDER_RELEASE_REFNUM ORRF
 WHERE ORRF.ORDER_RELEASE_GID = ORD.ORDER_RELEASE_GID
 AND ORRF.order_release_refnum_qual_gid = 'UGO.ULE_CONTAINER_SEAL_NO' )       						 				AS ULE_CONTAINER_SEAL_NO,
@@ -216,7 +216,7 @@ TO_CHAR(A.EVENTDATE,'DD-MM-YYYY HH24:MM:SS') EVENTDATE,
 A.STATUS_REASON_CODE_GID,
 (SELECT  REASON_C.DESCRIPTION FROM  BS_REASON_CODE REASON_C WHERE  REASON_C.BS_REASON_CODE_GID = A.STATUS_REASON_CODE_GID) REASON_CODE,
 TO_CHAR(A.INSERT_DATE,'DD-MM-YYYY HH24:MM:SS') INSERT_DATE,
-A.INSERT_USER
+C.REPORTING_GLUSER 							INSERT_USER
 
 
                                          FROM   ie_shipmentstatus A,
