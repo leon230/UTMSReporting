@@ -337,7 +337,7 @@ AND 1            =
 --AND SH.SHIPMENT_GID = 'ULE/PR.102125755'
 --AND SH.SHIPMENT_GID = 'ULE/PR.102125897'
 
-ORDER BY 40 asc, NVL(rpt_general.f_remove_domain(sh.shipment_gid),'n/a'), ss.stop_num
+ORDER BY 40 asc, NVL(rpt_general.f_remove_domain(sh.shipment_gid),'n/a'), ss.stop_num desc
 
 
 
