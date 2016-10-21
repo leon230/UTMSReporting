@@ -182,6 +182,7 @@ SELECT DISTINCT
   )
   ,'n/a') 																	CUSTOMER_ORDER_NO,
   -- to_char(SS.PLANNED_ARRIVAL - 2/24,'YYYY-MM-DD HH24:MI')				najp_godz_wyjazdu
+
   (
     SELECT
       CASE
