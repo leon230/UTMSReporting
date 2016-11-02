@@ -101,7 +101,7 @@ SELECT DISTINCT
       sh.shipment_gid                     = sh_ref_2.shipment_gid
     AND sh_ref_2.shipment_refnum_qual_gid = 'ULE.ULE_ESTIMATED_PFS'
   )
-  , 'n/a'))) SHIPMENT_ESTIMATED_PFS,
+  , 'n/a')))                                                                SHIPMENT_ESTIMATED_PFS,
   '' 																		miej_pal_rab
   ,''																		prop_godz
   ,''																		czas_zaladunku

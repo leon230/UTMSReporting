@@ -1,5 +1,6 @@
 SELECT ss.shipment_gid
-,TO_CHAR(SS.ACTUAL_ARRIVAL,'YYYY-MM-DD')
+,TO_CHAR(SS.ACTUAL_ARRIVAL,'YYYY-MM-DD')            ACTUAL_ARRIVAL_DATE
+,TO_CHAR(SS.ACTUAL_ARRIVAL,'HH24:MI:SS')            ACTUAL_ARRIVAL_TIME
 ,ss.stop_num
 ,(SELECT sh_ref_1.shipment_refnum_value
 		FROM shipment_refnum sh_ref_1
