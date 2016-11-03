@@ -3,17 +3,27 @@ SELECT loc_temp.location_gid
 ,loc_temp.location_name
 ,loc_temp.city
 FROM location loc_temp
+
 WHERE
 EXISTS
 (SELECT 1
-FROM order_release orls
-WHERE loc_temp.location_gid in (orls.source_location_gid, orls.dest_location_gid, orls.PLAN_FROM_LOCATION_GID, orls.PLAN_TO_LOCATION_GID)
-
-)
-
-
-
-
+ FROM order_release orls
+ ,order_movement om
+ ,shipment sh
+ WHERE
+ orls.order_release_gid = om.order_release_gid
+ AND om.shipment_gid = sh.shipment_gid
+ AND loc_temp.location_gid in (orls.source_location_gid, orls.dest_location_gid, orls.PLAN_FROM_LOCATION_GID, orls.PLAN_TO_LOCATION_GID,
+ sh.source_location_gid, sh.dest_location_gid)
+ AND NOT EXISTS
+    (SELECT 1
+        FROM shipment_refnum sh_ref_1
+        WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
+        AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
+        AND sh_ref_1.shipment_gid = sh.shipment_gid)
+ AND sh.insert_date >= to_date('2015-01-01','YYYY-MM-DD')
+ AND sh.insert_date < to_date('2016-01-01','YYYY-MM-DD')
+ )
 )
 SELECT loc.location_gid
 ,loc.location_name
