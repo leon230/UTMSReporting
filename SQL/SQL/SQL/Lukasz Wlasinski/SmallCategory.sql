@@ -22,7 +22,7 @@ EXISTS
         AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
         AND sh_ref_1.shipment_gid = sh.shipment_gid)
  AND sh.insert_date >= to_date('2015-01-01','YYYY-MM-DD')
- AND sh.insert_date < to_date('2016-01-01','YYYY-MM-DD')
+-- AND sh.insert_date < to_date('2016-01-01','YYYY-MM-DD')
  )
 )
 SELECT loc.location_gid
