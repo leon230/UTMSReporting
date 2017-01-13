@@ -1,0 +1,41 @@
+select sh.shipment_gid
+,orls.order_release_gid
+,to_char(orls.early_pickup_date ,'YYYY-MM-DD') AS early_pickup_date
+,to_char(orls.late_pickup_date ,'YYYY-MM-DD') AS late_pickup_date
+,to_char(orls.early_delivery_date ,'YYYY-MM-DD') AS early_delivery_date
+,to_char(orls.late_delivery_date ,'YYYY-MM-DD') AS late_delivery_date
+,orls.source_location_gid
+,s_loc.location_name as s_loc_name
+,s_loc.country_code3_gid s_loc_code
+,orls.dest_location_gid
+,d_loc.location_name as d_loc_name
+,d_loc.country_code3_gid d_loc_code
+,or_ref.order_release_refnum_qual_gid
+,or_ref.order_release_refnum_value PFS
+,orls.total_weight
+,orls.total_weight_uom_code
+,sh.servprov_gid
+,t_loc.location_name tsp_name
+
+
+
+
+
+from shipment sh
+join location t_loc on (t_loc.location_gid = sh.servprov_gid)
+,order_release orls
+join location s_loc on (s_loc.location_gid = orls.source_location_gid)
+join location d_loc on (d_loc.location_gid = orls.dest_location_gid)
+left outer join order_release_refnum or_ref on (or_ref.order_release_gid = orls.order_release_gid and or_ref.order_release_refnum_qual_gid = 'ULE.ULE_ORIGINAL_PFS')
+join order_release_refnum or_ref_2 on (or_ref_2.order_release_gid = orls.order_release_gid and or_ref_2.order_release_refnum_qual_gid IN('ULE.ORIGINAL_STREAM','ULE.ULE_STREAM') AND or_ref_2.order_release_refnum_value = 'SECONDARY')
+,order_movement om
+
+
+where
+
+sh.shipment_gid = om.shipment_gid
+and om.order_release_gid = orls.order_release_gid
+and sh.START_TIME >= to_date('2016-10-01','YYYY-MM-DD')
+and sh.START_TIME < to_date('2017-01-01','YYYY-MM-DD')
+and s_loc.country_code3_gid = 'FRA'
+AND d_loc.country_code3_gid = 'FRA'

@@ -4,6 +4,7 @@ temp.source_city,
 TEMP.DEST_LOC,
 temp.DEST_LOC_POSTAL,
 temp.dest_city,
+temp.COUNTRY_CODE3_GID,
 -- temp.sh_TOTAL_WEIGHT_KG,
 -- count(temp.SHIPMENT_GID) num_shipments,
 
@@ -25,10 +26,10 @@ SUM(CASE WHEN TEMP.PAL_RANGE = 'OVER 10000' THEN temp.sh_TOTAL_WEIGHT_KG END ) P
 
 from (
 SELECT sh.SHIPMENT_GID,
-ord_rel.ORDER_RELEASE_GID,
+ord_rel.ORDER_RELEASE_GID
+,del_loc.COUNTRY_CODE3_GID
 
-
- NVL(TRIM(TO_CHAR(sh.TOTAL_WEIGHT_BASE*0.45359237,'999999999D99','NLS_NUMERIC_CHARACTERS = ''. ''')),'-')									sh_TOTAL_WEIGHT_KG,
+,NVL(TRIM(TO_CHAR(sh.TOTAL_WEIGHT_BASE*0.45359237,'999999999D99','NLS_NUMERIC_CHARACTERS = ''. ''')),'-')									sh_TOTAL_WEIGHT_KG,
 
 
 case when sh.TOTAL_WEIGHT_BASE*0.45359237 >=0 and sh.TOTAL_WEIGHT_BASE*0.45359237 <=300 then '0-300'
@@ -62,10 +63,10 @@ del_loc.COUNTRY_CODE3_GID DEST_LOC_COUNTRY,
 
 coalesce((TO_NUMBER((case when ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE is null then '0'
 		else
-		
+
 		((TRIM(TO_CHAR(replace(ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE,',','.'),'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))))  end),
 		'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''')),sh.total_ship_unit_count)																													or_pallets,
-		
+
 ord_rel_STR.ORDER_RELEASE_REFNUM_VALUE,
 -- ord_rel.TOTAL_WEIGHT OR_TOTAL_WEIGHT,
 -- ord_mov.TOTAL_WEIGHT_UOM_CODE,
@@ -86,19 +87,18 @@ join ORDER_RELEASE_REFNUM ord_rel_STR on ord_rel.order_release_gid = ord_rel_STR
 WHERE
 -- pic_loc.COUNTRY_CODE3_GID in ('SWE')
 -- and
-del_loc.COUNTRY_CODE3_GID in ('SWE','FIN')
-
-and trunc(ord_rel.LATE_DELIVERY_DATE) >= to_date('2015-11-01','YYYY-MM-DD')
-and 
-trunc(ord_rel.LATE_DELIVERY_DATE) <= to_date('2016-10-31','YYYY-MM-DD')
-and sh.source_location_gid in ('ULE.V207484')
+--del_loc.COUNTRY_CODE3_GID in ('SWE','FIN')
+trunc(ord_rel.LATE_DELIVERY_DATE) >= to_date('2015-11-01','YYYY-MM-DD')
+and trunc(ord_rel.LATE_DELIVERY_DATE) <= to_date('2016-10-31','YYYY-MM-DD')
+and sh.source_location_gid in ('ULE.V207493')
 ) temp
 
-group by 
+group by
 temp.PICK_LOC,
 temp.PICK_LOC_POSTAL,
 temp.source_city,
 TEMP.DEST_LOC,
 temp.DEST_LOC_POSTAL,
-temp.dest_city
+temp.dest_city,
+temp.COUNTRY_CODE3_GID
 -- temp.sh_TOTAL_WEIGHT_KG

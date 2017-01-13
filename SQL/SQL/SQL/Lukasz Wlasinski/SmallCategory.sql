@@ -15,6 +15,11 @@ EXISTS
  AND om.shipment_gid = sh.shipment_gid
  AND loc_temp.location_gid in (orls.source_location_gid, orls.dest_location_gid, orls.PLAN_FROM_LOCATION_GID, orls.PLAN_TO_LOCATION_GID,
  sh.source_location_gid, sh.dest_location_gid)
+
+
+
+
+
  AND NOT EXISTS
     (SELECT 1
         FROM shipment_refnum sh_ref_1

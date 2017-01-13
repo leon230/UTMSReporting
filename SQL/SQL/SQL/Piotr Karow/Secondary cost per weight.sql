@@ -60,7 +60,8 @@ del_loc.city                    dest_city,
 
 -- ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE,
 
-coalesce((TO_NUMBER((case when REGEXP_LIKE(ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE, '[^0-9 \.,]') then '0'
+--coalesce((TO_NUMBER((case when REGEXP_LIKE(ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE, '[^0-9 \.,]') then '0'
+coalesce((TO_NUMBER((case when ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE is null  then '0'
 		else 
 		
 		((TRIM(TO_CHAR(replace(ord_rel_ref.ORDER_RELEASE_REFNUM_VALUE,',','.'),'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))))  end),
@@ -88,9 +89,9 @@ WHERE
 -- and
 del_loc.COUNTRY_CODE3_GID in ('SWE')
 
-and trunc(ord_rel.LATE_DELIVERY_DATE) >= to_date('2015-01-01','YYYY-MM-DD')
+and trunc(ord_rel.LATE_DELIVERY_DATE) >= to_date('2015-11-01','YYYY-MM-DD')
 and 
-trunc(ord_rel.LATE_DELIVERY_DATE) < to_date('2016-01-01','YYYY-MM-DD')
+trunc(ord_rel.LATE_DELIVERY_DATE) <= to_date('2016-10-31','YYYY-MM-DD')
 and sh.source_location_gid in ('ULE.V207480','ULE.V207503')
 ) temp
 

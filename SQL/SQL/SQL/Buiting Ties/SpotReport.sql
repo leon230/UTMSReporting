@@ -11,7 +11,7 @@ select sh.shipment_gid,
     (select loc1.city from location loc1 where loc1.location_gid = sh.source_location_gid) source_city,
     sh.dest_location_gid,
     (select loc1.city from location loc1 where loc1.location_gid = sh.dest_location_gid) dest_city ,
-    sr_region.shipment_refnum_value "REGION",
+    sr_region.shipment_refnum_value REGION,
     SH.SERVPROV_GID,
     (SELECT
             CAR_LOC.LOCATION_NAME
@@ -28,6 +28,7 @@ select sh.shipment_gid,
                     END)
     from shipment_cost sc_temp
     WHERE sc_temp.shipment_gid = sh.shipment_gid
+    AND sc_temp.is_weighted = 'N'
     )																								FINAL_SHIPMENT_COST
     ,SH.PLANNED_RATE_GEO_GID
     ,(select sum(rgc_temp.CHARGE_AMOUNT)
@@ -67,9 +68,9 @@ select sh.shipment_gid,
 
 
 from shipment sh
-    join ss_status_history C on sh.shipment_gid = C.shipment_gid
-    join ie_shipmentstatus A on C.i_transaction_no = A.i_transaction_no
-    join bs_reason_code F on A.STATUS_REASON_CODE_GID = F.bs_reason_code_gid
+    LEFT join ss_status_history C on sh.shipment_gid = C.shipment_gid
+    LEFT join ie_shipmentstatus A on C.i_transaction_no = A.i_transaction_no
+    LEFT join bs_reason_code F on A.STATUS_REASON_CODE_GID = F.bs_reason_code_gid
     left outer join shipment_refnum sr_region on sh.shipment_gid = sr_region.shipment_gid AND sr_region.SHIPMENT_REFNUM_QUAL_GID = 'ULE.ULE_FUNCTIONAL_REGION'
 
 
@@ -79,8 +80,19 @@ where
 --    AND sh.start_time < to_date('2016-01-01','YYYY-MM-DD')
 
     sh.start_time >= to_date('2016-01-01','YYYY-MM-DD')
-  AND sh.start_time < to_date('2016-10-01','YYYY-MM-DD')
+  AND sh.start_time < to_date('2016-03-01','YYYY-MM-DD')
     -- cast(From_tz(cast(sh.end_time AS TIMESTAMP), 'GMT') AT TIME ZONE (select time_zone_gid from location where location_gid = sh.dest_location_gid) as date) between to_date(:P_START_DATE,:P_DATE_TIME_FORMAT) AND to_date(:P_END_DATE,:P_DATE_TIME_FORMAT)
     and a.domain_name = 'ULE/PR'
     -- AND sr_region.shipment_refnum_value = NVL(:P_REGION,sr_region.shipment_refnum_value)
     and sh.IS_SPOT_COSTED = 'Y'
+    AND NOT EXISTS
+        (SELECT /*+ FIRST_ROWS(1)*/ 1
+            FROM shipment_refnum sh_ref_1
+            WHERE sh_ref_1.shipment_Refnum_Qual_Gid = 'ULE.ULE_SHIPMENT_STREAM'
+            AND sh_ref_1.shipment_Refnum_Value = 'SECONDARY'
+            AND sh_ref_1.shipment_gid = sh.shipment_gid)
+--    AND EXISTS
+--    (SELECT 1
+--        FROM tender_collaboration tc
+--        WHERE tc.shipment_gid = sh.shipment_gid
+--        AND tc.TENDER_TYPE = 'Spot Bid')

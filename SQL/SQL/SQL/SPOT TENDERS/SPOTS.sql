@@ -64,8 +64,32 @@ select sh.shipment_gid,
 		
 		/* BSSC_EVENT_DELIVER.INSERT_USER, */
 		/* BSRC.INSERT_USER */
-		
+		,case when sh.PLANNED_RATE_GEO_GID is not null then
+        to_char(
+         CASE WHEN (tcs.BID_AMOUNT_CURRENCY_GID = 'EUR' or tcs.BID_AMOUNT_CURRENCY_GID is null) THEN tcs.BID_AMOUNT
+                         when tcs.BID_AMOUNT_CURRENCY_GID <> 'EUR' then tcs.BID_AMOUNT *
+                         unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(sh.start_time,tcs.BID_AMOUNT_CURRENCY_GID,'EUR')
+                         END -
+        CASE
+                WHEN (sh.PLANNED_COST_CURRENCY_GID = 'EUR' or sh.PLANNED_COST_CURRENCY_GID is null) THEN sh.PLANNED_COST
+                when sh.PLANNED_COST_CURRENCY_GID <> 'EUR' then sh.PLANNED_COST *
+                unilever.ebs_procedures_ule.GET_QUARTERLY_EX_RATE(sh.start_time,sh.PLANNED_COST_CURRENCY_GID,'EUR')
+                END
+        )
+        else 'No planned rate record'
+        end                                                                                                                             sh_base_vs_planned_eur
 
+
+--        ,(select coalesce(CEIL((TO_NUMBER((case when REGEXP_LIKE(sh_ref_pal.shipment_REFNUM_VALUE, '[^0-9 \.,]') then '0'
+--        		else
+--
+--        		((TRIM(TO_CHAR(replace(sh_ref_pal.shipment_REFNUM_VALUE,',','.'),'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))))  end),
+--        		'999999999D99','NLS_NUMERIC_CHARACTERS = '', '''))),sh.total_ship_unit_count)
+--           from
+--           shipment_refnum sh_ref_pal
+--           where sh_ref_pal.shipment_gid = sh.shipment_gid
+--           and sh_ref_pal.SHIPMENT_REFNUM_QUAL_GID  = 'ULE.ULE_ORIGINAL_PFS'
+--         )                                                                                                                                                  pfs
 
 from
 shipment sh,
@@ -85,6 +109,7 @@ and tc.shipment_gid = sh.shipment_gid
 and tc.TENDER_TYPE = 'Spot Bid'
 --AND SH.shipment_gid = 'ULE/PR.101903846'
 and tcs.BID_AMOUNT is not null
+and sh.shipment_gid = :P_SH_ID
 -- AND SS.SHIPMENT_GID = SH.SHIPMENT_GID
 -- AND SS.STATUS_TYPE_GID = 'ULE/PR.SECURE RESOURCES'
 	-- AND BSRC.BS_REASON_CODE_GID IN ('ULE/PR.0026')

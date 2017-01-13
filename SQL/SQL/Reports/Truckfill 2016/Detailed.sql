@@ -282,7 +282,12 @@ AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 
 ,rd.total_cost																											                                    TOTAL_COST_EUR
 
-,round(rd.pfs/rd.truck_capacity_pfs,2)																														PFS_PERC
+,case when round(rd.pfs/rd.truck_capacity_pfs,2) > 1 then 1
+else round(rd.pfs/rd.truck_capacity_pfs,2)				end																									PFS_PERC
+
+
+
+
 
 ,CASE WHEN rd.equipment in ('ULE.BARGE_AMB_1299_MT','ULE.BARGE_TEMPC_2333_MT','ULE.BARGE_TEMPC_2333_MT','ULE.COASTER_BARGE_AMB_6513_MT','ULE.COASTER_BARGE_TEMPC_6513_MT') THEN 1
 WHEN (round((rd.weight/(rd.truck_capacity_weight)),2)) > 1 THEN 1
