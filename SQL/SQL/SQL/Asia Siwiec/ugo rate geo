@@ -1,0 +1,37 @@
+SELECT rg.rate_geo_gid,
+  rgc.LOW_VALUE1,
+  dl.distance_value,
+  ro.servprov_gid,
+  rgc.LOW_VALUE2,
+  rgc.rate_geo_cost_seq
+  ,rgcubDRY20.CHARGE_AMOUNT DRY_20CO,
+  rgcubDRY40CO.CHARGE_AMOUNT DRY_40CO,
+  rgcubDRY40HC.CHARGE_AMOUNT DRY_40HC,
+  rgcubREF20.CHARGE_AMOUNT ref_20CO,
+  rgcubREF40CO.CHARGE_AMOUNT ref_40CO,
+  rgcubREF40HC.CHARGE_AMOUNT ref_40HC
+FROM rate_geo rg
+JOIN rate_offering ro
+ON rg.rate_offering_gid = ro.rate_offering_gid
+JOIN x_lane xl
+ON xl.x_lane_gid = rg.x_lane_gid
+JOIN DISTANCE_LOOKUP dl
+ON xl.x_lane_gid = dl.x_lane_gid
+JOIN rate_geo_cost_group rgcg
+ON rg.rate_geo_gid = rgcg.rate_geo_gid
+JOIN rate_geo_cost rgc
+ON rgc.rate_geo_cost_group_gid = rgcg.rate_geo_cost_group_gid
+left JOIN rate_geo_cost_unit_break rgcubDRY20
+ON (rgc.rate_geo_cost_group_gid = rgcubDRY20.rate_geo_cost_group_gid and rgcubDRY20.RATE_UNIT_BREAK_GID   = 'UGO.DRY_20CO' and rgcubDRY20.RATE_GEO_COST_SEQ = rgc.RATE_GEO_COST_seq)
+left JOIN rate_geo_cost_unit_break rgcubDRY40CO
+ON (rgc.rate_geo_cost_group_gid = rgcubDRY40CO.rate_geo_cost_group_gid AND rgcubDRY40CO.RATE_UNIT_BREAK_GID = 'UGO.DRY_40CO' and rgcubDRY40CO.RATE_GEO_COST_SEQ = rgc.RATE_GEO_COST_SEQ)
+left JOIN rate_geo_cost_unit_break rgcubDRY40HC
+ON (rgc.rate_geo_cost_group_gid = rgcubDRY40HC.rate_geo_cost_group_gid AND rgcubDRY40HC.RATE_UNIT_BREAK_GID = 'UGO.DRY_40HC' and rgcubDRY40HC.RATE_GEO_COST_SEQ = rgc.RATE_GEO_COST_SEQ)
+left JOIN rate_geo_cost_unit_break rgcubREf20
+ON (rgc.rate_geo_cost_group_gid = rgcubREF20.rate_geo_cost_group_gid AND rgcubREF20.RATE_UNIT_BREAK_GID   = 'UGO.REF_20CO' and rgcubREF20.RATE_GEO_COST_SEQ = rgc.RATE_GEO_COST_SEQ)
+left JOIN rate_geo_cost_unit_break rgcubREF40CO
+ON (rgc.rate_geo_cost_group_gid = rgcubREF40CO.rate_geo_cost_group_gid AND rgcubREF40CO.RATE_UNIT_BREAK_GID = 'UGO.REF_40CO' and rgcubREF40CO.RATE_GEO_COST_SEQ = rgc.RATE_GEO_COST_SEQ)
+left JOIN rate_geo_cost_unit_break rgcubREF40HC
+ON (rgc.rate_geo_cost_group_gid     = rgcubREF40HC.rate_geo_cost_group_gid AND rgcubREF40HC.RATE_UNIT_BREAK_GID = 'UGO.REF_40HC' and rgcubREF40HC.RATE_GEO_COST_SEQ = rgc.RATE_GEO_COST_SEQ)
+WHERE rg.rate_geo_gid               IN ('UGO.OUT-P2P-BEANR-MYPKG-T1093654_20160622_742','UGO.OUT-P2P-BEANR-PHMNL-T1093654_20160915_20','UGO.OUT-P2P-GBSOU-AEJEA-T1093654_20160622_698','UGO.OUT-P2P-NLRTM-AUMEL-T1093654_20160622_240','UGO.OUT-P2P-NLRTM-AUSYD-T1093654_20160622_590','UGO.OUT-P2P-NLRTM-BDCGP-T1093654_20160622_916','UGO.OUT-P2P-NLRTM-CNNGB-T1093654_20160622_1192','UGO.OUT-P2P-NLRTM-CNXGG-T1093654_20160622_922','UGO.OUT-P2P-NLRTM-INNSA-T1093654_20160622_255','UGO.OUT-P2P-NLRTM-KRPUS-T1093654_20160412_7','UGO.OUT-P2P-NLRTM-KRPUS-T1093654_20160718_11','UGO.OUT-P2P-NLRTM-MYPKG-T1093654_20160622_270','UGO.OUT-P2P-NLRTM-PHMNL-T1093654_20160622_620','UGO.OUT-P2P-NLRTM-PHMNL-T1093654_20160915_18')
+--where rg.rate_geo_gid in ('UGO.OUT-P2P-GBFXT-AUMEL-T1050731_20140609_4')
