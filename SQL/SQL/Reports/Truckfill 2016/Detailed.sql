@@ -50,7 +50,7 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 ELSE sh.total_num_reference_units			END,0)),0)
     ,33
 )	                                                                                                                                                         PFS
-,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
+,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                         WEIGHT
 ,CASE WHEN sh.rate_geo_gid is null then 'N/A'
 ELSE to_char(ROUND(sh.TOTAL_VOLUME_BASE*0.02831685))
 END                                                                                                                                                TOTAL_VOLUME_CUM

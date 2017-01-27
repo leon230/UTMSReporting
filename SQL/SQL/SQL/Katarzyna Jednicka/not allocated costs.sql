@@ -1,0 +1,26 @@
+select aord.ORDER_RELEASE_GID
+,sc.SHIPMENT_GID
+,sc.COST_TYPE
+,aord.COST_DESCRIPTION
+,sc.ACCESSORIAL_CODE_GID
+,aord.ACCESSORIAL_CODE_GID
+
+
+
+
+from ALLOCATION_ORDER_RELEASE_D aord
+--join allocation_d ad on (ad.ORDER_RELEASE_GID = aord.ORDER_RELEASE_GID and aord.ALLOC_SEQ_NO = ad.ALLOC_SEQ_NO)
+join allocation a on (a.ORDER_RELEASE_GID = aord.ORDER_RELEASE_GID and a.ALLOC_SEQ_NO = aord.ALLOC_SEQ_NO)
+--join allocation_base ab on (ab.SHIPMENT_GID = ad.SHIPMENT_GID and ad.ALLOC_SEQ_NO = ab.ALLOC_SEQ_NO)
+join shipment_cost sc on (sc.SHIPMENT_GID = a.SHIPMENT_GID)
+
+
+where sc.COST_TYPE <> 'B'
+and aord.COST_DESCRIPTION <> 'B'
+and sc.COST_TYPE <> aord.COST_DESCRIPTION
+and aord.ACCESSORIAL_CODE_GID = sc.ACCESSORIAL_CODE_GID
+
+and AORD.INSERT_DATE >= sysdate - 24
+
+and
+(select count(sc.ACCESSORIAL_CODE_GID) from SHIPMENT_COST sc2 where sc2.SHIPMENT_GID = sc.SHIPMENT_GID and sc2.ACCESSORIAL_CODE_GID = sc.ACCESSORIAL_CODE_GID) = 1

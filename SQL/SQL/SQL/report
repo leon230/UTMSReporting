@@ -1,26 +1,153 @@
-select aord.ORDER_RELEASE_GID
-,sc.SHIPMENT_GID
-,sc.COST_TYPE
-,aord.COST_DESCRIPTION
-,sc.ACCESSORIAL_CODE_GID
-,aord.ACCESSORIAL_CODE_GID
+select
+temp.dc_name
+,case when to_date(temp.bp_insert_date,'YYYY-MM-DD') = to_date('2016-01-23','YYYY-MM-DD') then max(temp.duration_min) end as day1
+,case when to_date(temp.bp_insert_date,'YYYY-MM-DD') = to_date('2016-01-23','YYYY-MM-DD') + 1 then max(temp.duration_min) end as day2
+,case when to_date(temp.bp_insert_date,'YYYY-MM-DD') = to_date('2016-01-23','YYYY-MM-DD')  + 2then max(temp.duration_min) end as day3
 
+ from
 
-
-
-from ALLOCATION_ORDER_RELEASE_D aord
---join allocation_d ad on (ad.ORDER_RELEASE_GID = aord.ORDER_RELEASE_GID and aord.ALLOC_SEQ_NO = ad.ALLOC_SEQ_NO)
-join allocation a on (a.ORDER_RELEASE_GID = aord.ORDER_RELEASE_GID and a.ALLOC_SEQ_NO = aord.ALLOC_SEQ_NO)
---join allocation_base ab on (ab.SHIPMENT_GID = ad.SHIPMENT_GID and ad.ALLOC_SEQ_NO = ab.ALLOC_SEQ_NO)
-join shipment_cost sc on (sc.SHIPMENT_GID = a.SHIPMENT_GID)
-
-
-where sc.COST_TYPE <> 'B'
-and aord.COST_DESCRIPTION <> 'B'
-and sc.COST_TYPE <> aord.COST_DESCRIPTION
-and aord.ACCESSORIAL_CODE_GID = sc.ACCESSORIAL_CODE_GID
-
-and AORD.INSERT_DATE >= sysdate - 24
-
-and
-(select count(sc.ACCESSORIAL_CODE_GID) from SHIPMENT_COST sc2 where sc2.SHIPMENT_GID = sc.SHIPMENT_GID and sc2.ACCESSORIAL_CODE_GID = sc.ACCESSORIAL_CODE_GID) = 1
+(SELECT /*+ optimizer_features_enable('11.2.0.3') */ bp.BULK_PLAN_XID,
+bp.QUERY_NAME ,
+case
+   when bp.query_name is null then
+      case bp.planning_parameter_set_gid
+         when 'ULE/PR.TEST_GPS_PLANNING_PARAMETER' then 'PIOTRKOW'
+         when 'ULE/PR.ULE_EPOCA_2Y_PLANNING' then 'EPOCA'
+      end
+   else bp.query_name
+end "CORRECTED_QUERY",
+to_char(bp.start_time,'YYYY-MM-DD') as bp_insert_date,
+to_char(bp.START_TIME,'YYYY-MM-DD HH24:MI:SS') "START_TIME",
+to_char(bp.END_TIME,'YYYY-MM-DD HH24:MI:SS') "END_TIME",
+bp.NUM_OF_ORDERS_SELECTED ,
+bp.NUM_OF_ORDERS_PLANNED ,
+bp.NUM_ORDERS_PLANNED_FAILED ,
+    case
+      when bp.num_orders_planned_failed > 0 then 'TRUE'
+      else 'FALSE'
+    end "BP_FAILED",
+bp.PLANNING_PARAMETER_SET_GID ,
+ltrim(to_char(round((bp.end_time - bp.start_time)*24*60,2),'999999990D99','NLS_NUMERIC_CHARACTERS = '', ''')) duration_min,
+ltrim(to_char(case
+   when bp.num_of_orders_selected > 0 then
+     round(((bp.end_time - bp.start_time) / bp.num_of_orders_selected)*24*60*60,2)
+   else 0
+end,'999999990D99','NLS_NUMERIC_CHARACTERS = '', ''')) "TIME_PER_DN (sec)",
+(select
+      case sh1.source_location_gid
+        --GER
+        when 'ULE.V206618' then 'Heilbronn'
+        when 'ULE.V205273' then 'Auerbach'
+        when 'ULE.V316533' then 'Duisburg'
+        when 'ULE.V205283' then 'Heppenheim'
+        when 'ULE.V205318' then 'Pratau'
+        when 'ULE.V205309' then 'Wunstorf'
+        -- FRA
+        when 'ULE.V1108860' then 'Le Plessis-Belleville'
+        when 'ULE.V205304' then 'Corbas'
+        when 'ULE.V205315' then 'St Dizier'
+        when 'ULE.V206638' then 'Longvic'
+        when 'ULE.V226018' then 'Fauverney'
+        when 'ULE.V226017' then 'Fauverney'
+        when 'ULE.V1065534' then 'Le Meux'
+        when 'ULE.V316534' then 'Soissions'
+        when 'ULE.V205271' then 'Bresles'
+        when 'ULE.V180565' then 'St Dizier' -- ROCCA TRANSPORTS
+        --CHE
+        when 'ULE.V214466' then 'Thayngen'
+        when 'ULE.V214422' then 'Haerkingen'
+        when 'ULE.V214481' then 'Villmergen'
+        --AUT
+        --CEE
+        when 'ULE.V50433302' then 'Kralice'
+        when 'ULE.V218322' then 'Piotrkow'
+        when 'ULE.V162510' then 'Myslowice'
+        when 'ULE.V218354' then 'Nitra'
+        when 'ULE.V218353' then 'Nitra'
+        when 'ULE.V206754' then 'Budapest'
+        when 'ULE.V162316' then 'Budapest' --changed from Budaors
+       -- ROM
+        when 'ULE.V316415' then 'Romania'
+        when 'ULE.V316442' then 'Romania'
+       --ITA
+        when 'ULE.V214430' then 'EPOCA'
+        when 'ULE.V214526' then 'EPOCA'
+        when 'ULE.V214527' then 'EPOCA'
+        when 'ULE.V214530' then 'EPOCA'
+        when 'ULE.V214488' then 'EPOCA'
+        when 'ULE.V214489' then 'EPOCA'
+        when 'ULE.FV214489' then 'EPOCA'
+        when 'ULE.V221579' then 'EPOCA'
+        -- OTHER
+        when 'ULE.V50437917' then 'Heilbronn' -- rail
+        when 'ULE.V447382' then 'Piotrkow' -- PL RABEN
+        when 'ULE.V79806' then 'Heilbronn' -- SLL SPEDITION LAGER
+        when 'ULE.V85620' then 'Heilbronn' -- BR RIGTERINK
+        when 'ULE.V83867'then 'Heilbronn' -- DACHSER
+        when 'ULE.V1087802' then 'Heilbronn' -- KRAFTVERKEHR NAGEL
+        when 'ULE.V50487672' then 'Heilbronn' -- SCHAFER LOGISTIK GMBH
+        when 'ULE.V50487673' then 'Heilbronn' -- KRAFTVERKEHR NAGEL WURZBURG
+        when 'ULE.V50487674' then 'Heilbronn' -- KRAFTVERKEHR NAGEL HAMBURG
+        when 'ULE.V50487675' then 'Heilbronn' -- KRAFTVERKEHR NAGEL KAUFUNGEN
+        when 'ULE.V50487676' then 'Heilbronn' -- KRAFTVERKEHR NAGEL LADENBURG
+        when 'ULE.V50487677' then 'Heilbronn' -- KRAFTVERKEHR BORGHOLZHAUSEN
+        when 'ULE.V1059093' then 'Heilbronn' -- KRAFTVERKEHR LANGENFELD
+        when 'ULE.V1072381' then 'Heilbronn' -- KRAFTVERKEHR WUSTERMARK
+        when 'ULE.V50286993' then 'Heilbronn' -- KRAFTVERKEHR GROSS-GERAU
+        when 'ULE.V50424386' then 'Heilbronn' -- KRAFTVERKEHR MAGDEBURG
+        when 'ULE.V50432216' then 'Heilbronn' -- KRAFTVERKEHR BOCHUM
+        when 'ULE.V50433284' then 'Heilbronn' -- KRAFTVERKEHR WUNSTORF
+        when 'ULE.V50487816' then 'Heilbronn' -- KRAFTVERKEHR OSTERRONFELD
+        when 'ULE.V50487817' then 'Heilbronn' -- KRAFTVERKEHR ACHIM
+        when 'ULE.V50488359' then 'Heilbronn' -- KRAFTVERKEHR GOTHA
+        when 'ULE.V50438561' then 'Heilbronn' -- FRITZ
+        when 'ULE.V90952' then 'Heilbronn' --DACHSER
+        when 'ULE.V1014793' then 'Heilbronn' --DACHSER
+        when 'ULE.V1117603' then 'Heilbronn' --DACHSER
+        when 'ULE.V24221' then 'Heilbronn' --DACHSER
+        when 'ULE.V28138' then 'Heilbronn' --DACHSER
+        when 'ULE.V28243' then 'Heilbronn' --DACHSER
+        when 'ULE.V50434062' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437909' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437911' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437912' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437913' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437914' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437949' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437951' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437952' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437953' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437954' then 'Heilbronn' --DACHSER
+        when 'ULE.V50437960' then 'Heilbronn' --DACHSER
+        when 'ULE.V50438560' then 'Heilbronn' --DACHSER
+        when 'ULE.V50439351' then 'Heilbronn' --DACHSER
+        when 'ULE.V50439352' then 'Heilbronn' --DACHSER
+        when 'ULE.V50439353' then 'Heilbronn' --DACHSER
+        when 'ULE.V50439354' then 'Heilbronn' --DACHSER
+        when 'ULE.V50439356' then 'Heilbronn' --DACHSER
+        when 'ULE.V81164' then 'Heilbronn' --DACHSER
+        when 'ULE.V50438558' then 'Heilbronn' --DACHSER
+      end "DC"
+    from
+      shipment sh1
+    where sh1.bulk_plan_gid = bp.bulk_plan_gid and rownum =1
+) dc_name,
+(select ord_ref_str.ORDER_RELEASE_REFNUM_VALUE "STREAM"
+    from
+      order_release ord_rel1
+      join ORDER_RELEASE_REFNUM ord_ref_str on ord_rel1.order_release_gid = ord_ref_str.order_release_gid and ord_ref_str.order_release_refnum_qual_gid='ULE.ULE_STREAM'
+    where ord_rel1.bulk_plan_gid = bp.bulk_plan_gid and rownum =1
+) "ORDER_STREAM",
+bp.INSERT_USER "Insert User",
+to_char(insert_date,'YYYY-MM-DD HH24:MI:SS') "Insert Date"
+FROM
+BULK_PLAN bp
+WHERE
+--bp.START_TIME > to_date('2016-12-01','YYYY-MM-DD')
+bp.START_TIME >= to_date('2016-01-23','YYYY-MM-DD')
+and bp.START_TIME <= to_date('2016-01-27','YYYY-MM-DD')
+and bp.NUM_OF_ORDERS_SELECTED >0
+and bp.DOMAIN_NAME != 'ULE/SE'
+) temp
+group by
+temp.dc_name
