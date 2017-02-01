@@ -11,7 +11,7 @@ WHERE
 om.order_release_gid = orls.order_release_gid
 AND om.shipment_gid = sh.shipment_gid
 AND orls.insert_date >= TO_DATE('2016-01-01','YYYY-MM-DD')
-AND EXISTS 
+AND EXISTS
 (SELECT 1
 FROM shipment_refnum sh_ref
 WHERE sh_ref.shipment_gid = OM.shipment_gid
@@ -20,7 +20,7 @@ AND sh_ref.shipment_refnum_value = 'INBOUND'
 
 
 )
-AND NOT exists			
+AND NOT exists
 (SELECT 1
 FROM shipment_stop ss
 ,LOCATION_ROLE_PROFILE lrp
