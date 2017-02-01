@@ -13,7 +13,7 @@ TRIM(to_char(sh.TOTAL_WEIGHT,'99999990D99')) "Total Weight",
 sh.TOTAL_WEIGHT_UOM_CODE ,
 sh.TOTAL_PACKAGING_UNIT_COUNT ,
 sh.IS_HAZARDOUS ,
-sh.IS_TEMPERATURE_CONTROL ,
+sh.IS_TEMPERATURE_CONTROL,
 sh.NUM_ORDER_RELEASES ,
 sh.NUM_STOPS ,
 sh.FIRST_EQUIPMENT_GROUP_GID "Equipment",
@@ -48,7 +48,6 @@ sh_stop_ref11.shipment_stop_refnum_value "DN Number_1",
 '"'||replace(loc_rek1.remark_text,chr(11),null)||'"' "Safety Remarks_1",
 '"'||loc_rek11.EMAIL_ADDRESS||'"' "Contact Name_1",
 loc_rek11.PHONE1 "Contact Telephone Number_1",
-
 
 sh_stop2.stop_num "Stop Num_2",
 substr(sh_stop2.location_gid,5) "Location Xid_2",
@@ -265,7 +264,7 @@ to_char(app11.appointment_start_time,'YYYY-MM-DD HH211:MI:SS') appointment_start
 to_char(app11.appointment_end_time,'YYYY-MM-DD HH211:MI:SS') appointment_end_time_11,
 LOC_RES11.LOCATION_RESOURCE_NAME												DOCK_NAME_11,
 sh_stop11.stop_type														STOP_TYPE_11,
-sh_stop_ref11.shipment_stop_refnum_value "PO Number_11",
+sh_stop_ref111.shipment_stop_refnum_value "PO Number_11",
 sh_stop_ref1111.shipment_stop_refnum_value "DN Number_11",
 '"'||replace(loc_rek11.remark_text,chr(11),null)||'"' "Safety Remarks_11",
 '"'||loc_rek1111.EMAIL_ADDRESS||'"' "Contact Name_11",
@@ -369,14 +368,14 @@ loc_rek1515.PHONE1 "Contact Telephone Number_15"
 FROM
 SHIPMENT sh
 
-  left outer join LOCATION tsp_loc on sh.servprov_gid = tsp_loc.location_gid
-  left outer join SHIPMENT_REFNUM sh_ref_reg on sh.shipment_gid = sh_ref_reg.shipment_gid and sh_ref_reg.shipment_refnum_qual_gid='ULE.ULE_FUNCTIONAL REGION'
-  left outer join SHIPMENT_REFNUM sh_ref_col453 on sh.shipment_gid = sh_ref_col453.shipment_gid and sh_ref_col453.shipment_refnum_qual_gid='DRIVER_ASSIGNED'
-  left outer join SHIPMENT_REFNUM sh_ref_col452 on sh.shipment_gid = sh_ref_col452.shipment_gid and sh_ref_col452.shipment_refnum_qual_gid='ULE.ULE_DRIVER_INSTRUCTIONS'
-  left outer join SHIPMENT_REFNUM sh_ref_col451 on sh.shipment_gid = sh_ref_col451.shipment_gid and sh_ref_col451.shipment_refnum_qual_gid='ULE.ULE_TRANSPORT_CONDITION'
- left outer join SHIPMENT_REFNUM sh_ref_col450 on sh.shipment_gid = sh_ref_col450.shipment_gid and sh_ref_col450.shipment_refnum_qual_gid='ULE.TRUCK PLATE'
- left outer join SHIPMENT_REFNUM sh_ref_org_pfs on sh.shipment_gid = sh_ref_org_pfs.shipment_gid and sh_ref_org_pfs.shipment_refnum_qual_gid='ULE.ULE_ORIGINAL_PFS'
-  left outer join SHIPMENT_REFNUM sh_ref_str on sh.shipment_gid = sh_ref_str.shipment_gid and sh_ref_str.shipment_refnum_qual_gid='ULE.ULE_SHIPMENT_STREAM'
+    left outer join LOCATION tsp_loc on sh.servprov_gid = tsp_loc.location_gid
+    left outer join SHIPMENT_REFNUM sh_ref_reg on sh.shipment_gid = sh_ref_reg.shipment_gid and sh_ref_reg.shipment_refnum_qual_gid='ULE.ULE_FUNCTIONAL REGION'
+    left outer join SHIPMENT_REFNUM sh_ref_col453 on sh.shipment_gid = sh_ref_col453.shipment_gid and sh_ref_col453.shipment_refnum_qual_gid='DRIVER_ASSIGNED'
+    left outer join SHIPMENT_REFNUM sh_ref_col452 on sh.shipment_gid = sh_ref_col452.shipment_gid and sh_ref_col452.shipment_refnum_qual_gid='ULE.ULE_DRIVER_INSTRUCTIONS'
+    left outer join SHIPMENT_REFNUM sh_ref_col451 on sh.shipment_gid = sh_ref_col451.shipment_gid and sh_ref_col451.shipment_refnum_qual_gid='ULE.ULE_TRANSPORT_CONDITION'
+    left outer join SHIPMENT_REFNUM sh_ref_col450 on sh.shipment_gid = sh_ref_col450.shipment_gid and sh_ref_col450.shipment_refnum_qual_gid='ULE.TRUCK PLATE'
+    left outer join SHIPMENT_REFNUM sh_ref_org_pfs on sh.shipment_gid = sh_ref_org_pfs.shipment_gid and sh_ref_org_pfs.shipment_refnum_qual_gid='ULE.ULE_ORIGINAL_PFS'
+    left outer join SHIPMENT_REFNUM sh_ref_str on sh.shipment_gid = sh_ref_str.shipment_gid and sh_ref_str.shipment_refnum_qual_gid='ULE.ULE_SHIPMENT_STREAM'
 
 	left outer join SHIPMENT_STOP sh_stop1 on sh_stop1.shipment_gid = sh.shipment_gid and sh_stop1.stop_num =1
 	left outer join SHIPMENT_STOP sh_stop2 on sh_stop2.shipment_gid = sh.shipment_gid and sh_stop2.stop_num =2
@@ -394,7 +393,6 @@ SHIPMENT sh
 	left outer join SHIPMENT_STOP sh_stop14 on sh_stop14.shipment_gid = sh.shipment_gid and sh_stop14.stop_num =14
 	left outer join SHIPMENT_STOP sh_stop15 on sh_stop15.shipment_gid = sh.shipment_gid and sh_stop15.stop_num =15
 
-
 	left outer join LOCATION loc1 on sh_stop1.location_gid = loc1.location_gid
 	left outer join LOCATION loc2 on sh_stop2.location_gid = loc2.location_gid
 	left outer join LOCATION loc3 on sh_stop3.location_gid = loc3.location_gid
@@ -410,8 +408,6 @@ SHIPMENT sh
 	left outer join LOCATION loc13 on sh_stop13.location_gid = loc13.location_gid
 	left outer join LOCATION loc14 on sh_stop14.location_gid = loc14.location_gid
 	left outer join LOCATION loc15 on sh_stop15.location_gid = loc15.location_gid
-
-
 
 	left outer join APPOINTMENT app1 on app1.object_gid=sh_stop1.shipment_gid and app1.stop_num=sh_stop1.stop_num
 	left outer join APPOINTMENT app2 on app2.object_gid=sh_stop2.shipment_gid and app2.stop_num=sh_stop2.stop_num
@@ -429,7 +425,6 @@ SHIPMENT sh
 	left outer join APPOINTMENT app14 on app14.object_gid=sh_stop14.shipment_gid and app14.stop_num=sh_stop14.stop_num
 	left outer join APPOINTMENT app15 on app15.object_gid=sh_stop15.shipment_gid and app15.stop_num=sh_stop15.stop_num
 
-
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref1 on sh_stop_ref1.shipment_gid = sh_stop1.shipment_gid and sh_stop1.stop_num = sh_stop_ref1.stop_num and sh_stop_ref1.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop1.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref11 on sh_stop_ref11.shipment_gid = sh_stop1.shipment_gid and sh_stop1.stop_num = sh_stop_ref11.stop_num and sh_stop_ref11.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop1.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref2 on sh_stop_ref2.shipment_gid = sh_stop2.shipment_gid and sh_stop2.stop_num = sh_stop_ref2.stop_num and sh_stop_ref2.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop2.stop_type='D'
@@ -438,7 +433,6 @@ SHIPMENT sh
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref33 on sh_stop_ref33.shipment_gid = sh_stop3.shipment_gid and sh_stop3.stop_num = sh_stop_ref33.stop_num and sh_stop_ref33.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop3.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref4 on sh_stop_ref4.shipment_gid = sh_stop4.shipment_gid and sh_stop4.stop_num = sh_stop_ref4.stop_num and sh_stop_ref4.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop4.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref44 on sh_stop_ref44.shipment_gid = sh_stop4.shipment_gid and sh_stop4.stop_num = sh_stop_ref44.stop_num and sh_stop_ref44.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop4.stop_type='D'
-
 
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref5 on sh_stop_ref5.shipment_gid = sh_stop5.shipment_gid and sh_stop5.stop_num = sh_stop_ref5.stop_num and sh_stop_ref5.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop5.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref55 on sh_stop_ref55.shipment_gid = sh_stop5.shipment_gid and sh_stop5.stop_num = sh_stop_ref55.stop_num and sh_stop_ref55.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop5.stop_type='D'
@@ -452,7 +446,7 @@ SHIPMENT sh
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref99 on sh_stop_ref99.shipment_gid = sh_stop9.shipment_gid and sh_stop9.stop_num = sh_stop_ref99.stop_num and sh_stop_ref99.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop9.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref10 on sh_stop_ref10.shipment_gid = sh_stop10.shipment_gid and sh_stop10.stop_num = sh_stop_ref10.stop_num and sh_stop_ref10.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop10.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref1010 on sh_stop_ref1010.shipment_gid = sh_stop10.shipment_gid and sh_stop10.stop_num = sh_stop_ref1010.stop_num and sh_stop_ref1010.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop10.stop_type='D'
-	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref11 on sh_stop_ref11.shipment_gid = sh_stop11.shipment_gid and sh_stop11.stop_num = sh_stop_ref11.stop_num and sh_stop_ref11.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop11.stop_type='D'
+	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref111 on sh_stop_ref111.shipment_gid = sh_stop11.shipment_gid and sh_stop11.stop_num = sh_stop_ref111.stop_num and sh_stop_ref111.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop11.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref1111 on sh_stop_ref1111.shipment_gid = sh_stop11.shipment_gid and sh_stop11.stop_num = sh_stop_ref1111.stop_num and sh_stop_ref1111.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop11.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref12 on sh_stop_ref12.shipment_gid = sh_stop12.shipment_gid and sh_stop12.stop_num = sh_stop_ref12.stop_num and sh_stop_ref12.shipment_stop_refnum_qual_gid='ULE.ULE_PO_NUMBER' --and sh_stop12.stop_type='D'
 	left outer join SHIPMENT_STOP_REFNUM sh_stop_ref1212 on sh_stop_ref1212.shipment_gid = sh_stop12.shipment_gid and sh_stop12.stop_num = sh_stop_ref1212.stop_num and sh_stop_ref1212.shipment_stop_refnum_qual_gid='ULE.ULE_DN_NUMBER' --and sh_stop12.stop_type='D'
@@ -466,18 +460,14 @@ SHIPMENT sh
 	left outer join location_remark loc_rek1 on loc_rek1.location_gid = sh_stop1.location_gid and loc_rek1.remark_qual_gid IN ('ULE.ULE_BULK_HEALTH_SAFETY_RULES','ULE.ULE_HEALTH_SAFETY_RULES')
 	left outer join contact loc_rek11 on loc_rek11.CONTACT_GID = sh_stop1.location_gid
 
-
 	left outer join location_remark loc_rek2 on loc_rek2.location_gid = sh_stop2.location_gid and loc_rek2.remark_qual_gid IN ('ULE.ULE_BULK_HEALTH_SAFETY_RULES','ULE.ULE_HEALTH_SAFETY_RULES')
 	left outer join contact loc_rek22 on loc_rek22.CONTACT_GID = sh_stop2.location_gid
-
 
 	left outer join location_remark loc_rek3 on loc_rek3.location_gid = sh_stop3.location_gid and loc_rek3.remark_qual_gid IN ('ULE.ULE_BULK_HEALTH_SAFETY_RULES','ULE.ULE_HEALTH_SAFETY_RULES')
 	left outer join contact loc_rek33 on loc_rek33.CONTACT_GID = sh_stop3.location_gid
 
-
 	left outer join location_remark loc_rek4 on loc_rek4.location_gid = sh_stop4.location_gid and loc_rek4.remark_qual_gid IN ('ULE.ULE_BULK_HEALTH_SAFETY_RULES','ULE.ULE_HEALTH_SAFETY_RULES')
 	left outer join contact loc_rek44 on loc_rek44.CONTACT_GID = sh_stop4.location_gid
-
 
 	left outer join location_remark loc_rek5 on loc_rek5.location_gid = sh_stop5.location_gid and loc_rek5.remark_qual_gid IN ('ULE.ULE_BULK_HEALTH_SAFETY_RULES','ULE.ULE_HEALTH_SAFETY_RULES')
 	left outer join contact loc_rek55 on loc_rek55.CONTACT_GID = sh_stop5.location_gid
@@ -502,7 +492,6 @@ SHIPMENT sh
 	left outer join location_remark loc_rek15 on loc_rek15.location_gid = sh_stop15.location_gid and loc_rek15.remark_qual_gid IN ('ULE.ULE_BULK_HEALTH_SAFETY_RULES','ULE.ULE_HEALTH_SAFETY_RULES')
 	left outer join contact loc_rek1515 on loc_rek1515.CONTACT_GID = sh_stop15.location_gid
 
-
 	left outer join LOCATION_ADDRESS loc_add_1 on sh_stop1.location_gid = loc_add_1.LOCATION_GID and loc_add_1.LINE_SEQUENCE=1
 	left outer join LOCATION_ADDRESS loc_add_2 on sh_stop2.location_gid = loc_add_2.LOCATION_GID and loc_add_2.LINE_SEQUENCE=1
 	left outer join LOCATION_ADDRESS loc_add_3 on sh_stop3.location_gid = loc_add_3.LOCATION_GID and loc_add_3.LINE_SEQUENCE=1
@@ -519,40 +508,27 @@ SHIPMENT sh
 	left outer join LOCATION_ADDRESS loc_add_14 on sh_stop14.location_gid = loc_add_14.LOCATION_GID and loc_add_14.LINE_SEQUENCE=1
 	left outer join LOCATION_ADDRESS loc_add_15 on sh_stop15.location_gid = loc_add_15.LOCATION_GID and loc_add_15.LINE_SEQUENCE=1
 
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES1 ON (LOC_RES1.LOCATION_RESOURCE_GID = app1.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES2 ON (LOC_RES2.LOCATION_RESOURCE_GID = app2.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES3 ON (LOC_RES3.LOCATION_RESOURCE_GID = app3.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES4 ON (LOC_RES4.LOCATION_RESOURCE_GID = app4.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES5 ON (LOC_RES5.LOCATION_RESOURCE_GID = app5.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES6 ON (LOC_RES6.LOCATION_RESOURCE_GID = app6.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES7 ON (LOC_RES7.LOCATION_RESOURCE_GID = app7.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES8 ON (LOC_RES8.LOCATION_RESOURCE_GID = app8.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES9 ON (LOC_RES9.LOCATION_RESOURCE_GID = app9.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES10 ON (LOC_RES10.LOCATION_RESOURCE_GID = app10.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES11 ON (LOC_RES11.LOCATION_RESOURCE_GID = app11.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES12 ON (LOC_RES12.LOCATION_RESOURCE_GID = app12.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES13 ON (LOC_RES13.LOCATION_RESOURCE_GID = app13.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES14 ON (LOC_RES14.LOCATION_RESOURCE_GID = app14.LOCATION_RESOURCE_GID)
+    LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES15 ON (LOC_RES15.LOCATION_RESOURCE_GID = app15.LOCATION_RESOURCE_GID)
 
-
-
-
-
-	LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES1 ON (LOC_RES1.LOCATION_RESOURCE_GID = app1.LOCATION_RESOURCE_GID)
-	LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES2 ON (LOC_RES2.LOCATION_RESOURCE_GID = app2.LOCATION_RESOURCE_GID)
-	LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES3 ON (LOC_RES3.LOCATION_RESOURCE_GID = app3.LOCATION_RESOURCE_GID)
-	LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES4 ON (LOC_RES4.LOCATION_RESOURCE_GID = app4.LOCATION_RESOURCE_GID)
-	LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES5 ON (LOC_RES5.LOCATION_RESOURCE_GID = app5.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES6 ON (LOC_RES6.LOCATION_RESOURCE_GID = app6.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES7 ON (LOC_RES7.LOCATION_RESOURCE_GID = app7.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES8 ON (LOC_RES8.LOCATION_RESOURCE_GID = app8.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES9 ON (LOC_RES9.LOCATION_RESOURCE_GID = app9.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES10 ON (LOC_RES10.LOCATION_RESOURCE_GID = app10.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES11 ON (LOC_RES11.LOCATION_RESOURCE_GID = app11.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES12 ON (LOC_RES12.LOCATION_RESOURCE_GID = app12.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES13 ON (LOC_RES13.LOCATION_RESOURCE_GID = app13.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES14 ON (LOC_RES14.LOCATION_RESOURCE_GID = app14.LOCATION_RESOURCE_GID)
-LEFT OUTER JOIN LOCATION_RESOURCE LOC_RES15 ON (LOC_RES15.LOCATION_RESOURCE_GID = app15.LOCATION_RESOURCE_GID)
-
-
-
-
-
-
-
-
-   
-  where rownum <501
-  AND sh.shipment_gid = NVL(:P_SH_ID,SH.SHIPMENT_GID)
-  AND SH.START_TIME BETWEEN NVL(TO_DATE(:P_DATE_FROM,:P_DATE_TIME_FORMAT),SH.START_TIME) AND NVL(TO_DATE(:P_DATE_TO,:P_DATE_TIME_FORMAT),SH.START_TIME)
-  AND SH.SOURCE_LOCATION_GID = NVL(:P_SOURCE_LOC,SH.SOURCE_LOCATION_GID)
-  AND SH.SERVPROV_GID = NVL(:P_SERVPROV_ID,SH.SERVPROV_GID)
+    where rownum <501
+    AND sh.shipment_gid = NVL(:P_SH_ID,SH.SHIPMENT_GID)
+    AND SH.START_TIME BETWEEN NVL(TO_DATE(:P_DATE_FROM,:P_DATE_TIME_FORMAT),SH.START_TIME) AND NVL(TO_DATE(:P_DATE_TO,:P_DATE_TIME_FORMAT),SH.START_TIME)
+    AND SH.SOURCE_LOCATION_GID = NVL(:P_SOURCE_LOC,SH.SOURCE_LOCATION_GID)
+    AND SH.SERVPROV_GID = NVL(:P_SERVPROV_ID,SH.SERVPROV_GID)
   
   --sh srart time, source location, carrier id
   
