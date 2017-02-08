@@ -1,153 +1,106 @@
-select
-temp.dc_name
-,case when to_date(temp.bp_insert_date,'YYYY-MM-DD') = to_date('2016-01-23','YYYY-MM-DD') then max(temp.duration_min) end as day1
-,case when to_date(temp.bp_insert_date,'YYYY-MM-DD') = to_date('2016-01-23','YYYY-MM-DD') + 1 then max(temp.duration_min) end as day2
-,case when to_date(temp.bp_insert_date,'YYYY-MM-DD') = to_date('2016-01-23','YYYY-MM-DD')  + 2then max(temp.duration_min) end as day3
-
- from
-
-(SELECT /*+ optimizer_features_enable('11.2.0.3') */ bp.BULK_PLAN_XID,
-bp.QUERY_NAME ,
-case
-   when bp.query_name is null then
-      case bp.planning_parameter_set_gid
-         when 'ULE/PR.TEST_GPS_PLANNING_PARAMETER' then 'PIOTRKOW'
-         when 'ULE/PR.ULE_EPOCA_2Y_PLANNING' then 'EPOCA'
-      end
-   else bp.query_name
-end "CORRECTED_QUERY",
-to_char(bp.start_time,'YYYY-MM-DD') as bp_insert_date,
-to_char(bp.START_TIME,'YYYY-MM-DD HH24:MI:SS') "START_TIME",
-to_char(bp.END_TIME,'YYYY-MM-DD HH24:MI:SS') "END_TIME",
-bp.NUM_OF_ORDERS_SELECTED ,
-bp.NUM_OF_ORDERS_PLANNED ,
-bp.NUM_ORDERS_PLANNED_FAILED ,
-    case
-      when bp.num_orders_planned_failed > 0 then 'TRUE'
-      else 'FALSE'
-    end "BP_FAILED",
-bp.PLANNING_PARAMETER_SET_GID ,
-ltrim(to_char(round((bp.end_time - bp.start_time)*24*60,2),'999999990D99','NLS_NUMERIC_CHARACTERS = '', ''')) duration_min,
-ltrim(to_char(case
-   when bp.num_of_orders_selected > 0 then
-     round(((bp.end_time - bp.start_time) / bp.num_of_orders_selected)*24*60*60,2)
-   else 0
-end,'999999990D99','NLS_NUMERIC_CHARACTERS = '', ''')) "TIME_PER_DN (sec)",
-(select
-      case sh1.source_location_gid
-        --GER
-        when 'ULE.V206618' then 'Heilbronn'
-        when 'ULE.V205273' then 'Auerbach'
-        when 'ULE.V316533' then 'Duisburg'
-        when 'ULE.V205283' then 'Heppenheim'
-        when 'ULE.V205318' then 'Pratau'
-        when 'ULE.V205309' then 'Wunstorf'
-        -- FRA
-        when 'ULE.V1108860' then 'Le Plessis-Belleville'
-        when 'ULE.V205304' then 'Corbas'
-        when 'ULE.V205315' then 'St Dizier'
-        when 'ULE.V206638' then 'Longvic'
-        when 'ULE.V226018' then 'Fauverney'
-        when 'ULE.V226017' then 'Fauverney'
-        when 'ULE.V1065534' then 'Le Meux'
-        when 'ULE.V316534' then 'Soissions'
-        when 'ULE.V205271' then 'Bresles'
-        when 'ULE.V180565' then 'St Dizier' -- ROCCA TRANSPORTS
-        --CHE
-        when 'ULE.V214466' then 'Thayngen'
-        when 'ULE.V214422' then 'Haerkingen'
-        when 'ULE.V214481' then 'Villmergen'
-        --AUT
-        --CEE
-        when 'ULE.V50433302' then 'Kralice'
-        when 'ULE.V218322' then 'Piotrkow'
-        when 'ULE.V162510' then 'Myslowice'
-        when 'ULE.V218354' then 'Nitra'
-        when 'ULE.V218353' then 'Nitra'
-        when 'ULE.V206754' then 'Budapest'
-        when 'ULE.V162316' then 'Budapest' --changed from Budaors
-       -- ROM
-        when 'ULE.V316415' then 'Romania'
-        when 'ULE.V316442' then 'Romania'
-       --ITA
-        when 'ULE.V214430' then 'EPOCA'
-        when 'ULE.V214526' then 'EPOCA'
-        when 'ULE.V214527' then 'EPOCA'
-        when 'ULE.V214530' then 'EPOCA'
-        when 'ULE.V214488' then 'EPOCA'
-        when 'ULE.V214489' then 'EPOCA'
-        when 'ULE.FV214489' then 'EPOCA'
-        when 'ULE.V221579' then 'EPOCA'
-        -- OTHER
-        when 'ULE.V50437917' then 'Heilbronn' -- rail
-        when 'ULE.V447382' then 'Piotrkow' -- PL RABEN
-        when 'ULE.V79806' then 'Heilbronn' -- SLL SPEDITION LAGER
-        when 'ULE.V85620' then 'Heilbronn' -- BR RIGTERINK
-        when 'ULE.V83867'then 'Heilbronn' -- DACHSER
-        when 'ULE.V1087802' then 'Heilbronn' -- KRAFTVERKEHR NAGEL
-        when 'ULE.V50487672' then 'Heilbronn' -- SCHAFER LOGISTIK GMBH
-        when 'ULE.V50487673' then 'Heilbronn' -- KRAFTVERKEHR NAGEL WURZBURG
-        when 'ULE.V50487674' then 'Heilbronn' -- KRAFTVERKEHR NAGEL HAMBURG
-        when 'ULE.V50487675' then 'Heilbronn' -- KRAFTVERKEHR NAGEL KAUFUNGEN
-        when 'ULE.V50487676' then 'Heilbronn' -- KRAFTVERKEHR NAGEL LADENBURG
-        when 'ULE.V50487677' then 'Heilbronn' -- KRAFTVERKEHR BORGHOLZHAUSEN
-        when 'ULE.V1059093' then 'Heilbronn' -- KRAFTVERKEHR LANGENFELD
-        when 'ULE.V1072381' then 'Heilbronn' -- KRAFTVERKEHR WUSTERMARK
-        when 'ULE.V50286993' then 'Heilbronn' -- KRAFTVERKEHR GROSS-GERAU
-        when 'ULE.V50424386' then 'Heilbronn' -- KRAFTVERKEHR MAGDEBURG
-        when 'ULE.V50432216' then 'Heilbronn' -- KRAFTVERKEHR BOCHUM
-        when 'ULE.V50433284' then 'Heilbronn' -- KRAFTVERKEHR WUNSTORF
-        when 'ULE.V50487816' then 'Heilbronn' -- KRAFTVERKEHR OSTERRONFELD
-        when 'ULE.V50487817' then 'Heilbronn' -- KRAFTVERKEHR ACHIM
-        when 'ULE.V50488359' then 'Heilbronn' -- KRAFTVERKEHR GOTHA
-        when 'ULE.V50438561' then 'Heilbronn' -- FRITZ
-        when 'ULE.V90952' then 'Heilbronn' --DACHSER
-        when 'ULE.V1014793' then 'Heilbronn' --DACHSER
-        when 'ULE.V1117603' then 'Heilbronn' --DACHSER
-        when 'ULE.V24221' then 'Heilbronn' --DACHSER
-        when 'ULE.V28138' then 'Heilbronn' --DACHSER
-        when 'ULE.V28243' then 'Heilbronn' --DACHSER
-        when 'ULE.V50434062' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437909' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437911' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437912' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437913' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437914' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437949' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437951' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437952' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437953' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437954' then 'Heilbronn' --DACHSER
-        when 'ULE.V50437960' then 'Heilbronn' --DACHSER
-        when 'ULE.V50438560' then 'Heilbronn' --DACHSER
-        when 'ULE.V50439351' then 'Heilbronn' --DACHSER
-        when 'ULE.V50439352' then 'Heilbronn' --DACHSER
-        when 'ULE.V50439353' then 'Heilbronn' --DACHSER
-        when 'ULE.V50439354' then 'Heilbronn' --DACHSER
-        when 'ULE.V50439356' then 'Heilbronn' --DACHSER
-        when 'ULE.V81164' then 'Heilbronn' --DACHSER
-        when 'ULE.V50438558' then 'Heilbronn' --DACHSER
-      end "DC"
-    from
-      shipment sh1
-    where sh1.bulk_plan_gid = bp.bulk_plan_gid and rownum =1
-) dc_name,
-(select ord_ref_str.ORDER_RELEASE_REFNUM_VALUE "STREAM"
-    from
-      order_release ord_rel1
-      join ORDER_RELEASE_REFNUM ord_ref_str on ord_rel1.order_release_gid = ord_ref_str.order_release_gid and ord_ref_str.order_release_refnum_qual_gid='ULE.ULE_STREAM'
-    where ord_rel1.bulk_plan_gid = bp.bulk_plan_gid and rownum =1
-) "ORDER_STREAM",
-bp.INSERT_USER "Insert User",
-to_char(insert_date,'YYYY-MM-DD HH24:MI:SS') "Insert Date"
+SELECT /*+ leading(sh) full(sh) */ to_char(sh.insert_date,'dd-mm-yyyy') "Shipment Insert Date",
+to_char(sh_stop_pick.planned_arrival,'MONTH') "Pickup Planned Arrival Month",
+to_char(sh_stop_pick.planned_arrival,'IW') "Pickup Planned Arrival Week",
+to_char(sh_stop_del.planned_arrival,'MONTH') "Delivery Planned Arriva Month",
+to_char(sh_stop_del.planned_arrival,'IW') "Delivery Planned Arriva Week",
+ to_char(sh.start_time,'DD-MM-YYYY') "Shipment Start Time",
+ to_char(sh.end_time,'DD-MM-YYYY') "Shipment End Time",
+sh_ref_reg.SHIPMENT_REFNUM_VALUE "Functional Region",
+sh_ref_col371.SHIPMENT_REFNUM_VALUE "Ule/Pr.Or_Rel_Atr",
+sh.SHIPMENT_GID "Shipment GID",
+ord_rel.ORDER_RELEASE_XID ,
+sh.SERVPROV_GID "TSP ID",
+sh.SOURCE_LOCATION_GID "Pickup Location ID",
+pic_loc.CITY "Pickup City",
+pic_loc.country_code3_gid pickup_country,
+sh.DEST_LOCATION_GID "Delivery Location ID",
+del_loc.CITY "Delivery City",
+del_loc.country_code3_gid delivery_country,
+ord_rel_ref_col652.ORDER_RELEASE_REFNUM_VALUE "Material_Type",
+ord_rel_ref_col653.ORDER_RELEASE_REFNUM_VALUE "Material_Category",
+to_char(round(sum(CASE
+ WHEN ord_rel.TOTAL_WEIGHT_UOM_CODE = 'LB' THEN ord_rel.TOTAL_WEIGHT*0.45359237
+ WHEN ord_rel.TOTAL_WEIGHT_UOM_CODE = 'MTON' THEN ord_rel.TOTAL_WEIGHT*1000
+ WHEN ord_rel.TOTAL_WEIGHT_UOM_CODE = 'TON' THEN ord_rel.TOTAL_WEIGHT*1000
+ WHEN ord_rel.TOTAL_WEIGHT_UOM_CODE = 'GRM' THEN ord_rel.TOTAL_WEIGHT/1000
+ ELSE ord_rel.TOTAL_WEIGHT
+END),2),'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''') "Total Weight KG Or",
+sh.FIRST_EQUIPMENT_GROUP_GID ,
+to_char(sum(nvl(round((select sum(al_ord_rel_d1.COST) from allocation_order_release_d al_ord_rel_d1
+WHERE al_ord_rel_d1.COST_TYPE_GID <> 'O' and al_ord_rel_d1.order_release_gid = ord_rel.order_release_gid and (al_ord_rel_d1.accessorial_code_gid is null or rpt_general.f_remove_domain(al_ord_rel_d1.accessorial_code_gid) IN ('ULE_MYTO','ULE_TOLL','ULE_FTL FREIGHT COST CORRECTION','ULE_BONUS_MALUS','ULE_LTL FREIGHT COSTS CORRECTION','HAZARDOUS','ULE_FREIGHT COST BASIC LTL PER PALLET','ULE_FREIGHT COST BASIC FTL','ULE_TANK_CHASSIS HIRE','ULE_FTL FREIGHT COST CORRECTION','ULE_LTL FREIGHT COSTS CORRECTION','ULE_FREIGHT COST BASIC FTL','ULE_FREIGHT COST BASIC LTL PER PALLET','ULE_BONUS_MALUS','ULE_TOLL'))
+group by al_ord_rel_d1.order_release_gid),2),0)),'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''') "Total Ord Cost Base",
+sh.CURRENCY_GID ,
+to_char(sum(nvl(round((select sum(CASE
+    WHEN al_ord_rel_d1.COST_CURRENCY_GID = 'EUR' THEN al_ord_rel_d1.COST
+    ELSE al_ord_rel_d1.COST * UNILEVER.EBS_PROCEDURES_ULE.GET_QUARTERLY_EX_RATE(al_ord_rel_d1.INSERT_DATE,al_ord_rel_d1.COST_CURRENCY_GID,'EUR')
+   END) from allocation_order_release_d al_ord_rel_d1
+WHERE al_ord_rel_d1.COST_TYPE_GID <> 'O' and al_ord_rel_d1.order_release_gid = ord_rel.order_release_gid
+group by al_ord_rel_d1.order_release_gid),2),0)),'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''') "Total Ord Cost EUR",
+ord_rel_ref_col651.ORDER_RELEASE_REFNUM_VALUE "Transport_Condition",
+(SELECT bs_rc1.DESCRIPTION
 FROM
-BULK_PLAN bp
+SS_STATUS_HISTORY ss_stat1
+join IE_SHIPMENTSTATUS ie_ss1 on ss_stat1.i_transaction_no = ie_ss1.i_transaction_no
+join BS_REASON_CODE bs_rc1 on ie_ss1.status_reason_code_gid = bs_rc1.bs_reason_code_gid
 WHERE
---bp.START_TIME > to_date('2016-12-01','YYYY-MM-DD')
-bp.START_TIME >= to_date('2016-01-23','YYYY-MM-DD')
-and bp.START_TIME <= to_date('2016-01-27','YYYY-MM-DD')
-and bp.NUM_OF_ORDERS_SELECTED >0
-and bp.DOMAIN_NAME != 'ULE/SE'
-) temp
-group by
-temp.dc_name
+bs_rc1.BS_REASON_CODE_GID IN ('ULE/PR.0024','ULE/PR.0025','ULE/PR.0026','ULE/PR.0027','ULE/PR.0047','ULE/PR.0028','ULE.EXP_DEL','ULE/PR.3P_NON_CONF')
+and rownum = 1
+and ss_stat1.SHIPMENT_GID = sh.SHIPMENT_GID) "Spot Reason Code",
+to_char(sum(ord_rel.TOTAL_SHIP_UNIT_COUNT),'999999999D99','NLS_NUMERIC_CHARACTERS = '', ''') "Total Number of Pallets Or",
+sh.INSERT_USER ,
+sh.PLANNED_RATE_GEO_GID 
+FROM
+SHIPMENT sh
+  join LOCATION pic_loc on sh.source_location_gid = pic_loc.location_gid
+  join LOCATION del_loc on sh.dest_location_gid = del_loc.location_gid
+ left outer join SHIPMENT_REFNUM  sh_ref_col371 on sh.shipment_gid = sh_ref_col371.shipment_gid and sh_ref_col371.shipment_refnum_qual_gid='ULE/PR.ULE_OR_REL_ATR'
+ left outer join SHIPMENT_REFNUM  sh_ref_reg on sh.shipment_gid = sh_ref_reg.shipment_gid and sh_ref_reg.shipment_refnum_qual_gid='ULE.ULE_FUNCTIONAL_REGION'
+  join SHIPMENT_STOP sh_stop_pick on sh_stop_pick.shipment_gid = sh.shipment_gid and sh_stop_pick.stop_num='1'
+  join SHIPMENT_STOP sh_stop_del on sh_stop_del.shipment_gid = sh.shipment_gid and sh_stop_del.stop_num = sh.num_stops
+  join ORDER_MOVEMENT ord_mov on sh.shipment_gid = ord_mov.shipment_gid
+  join ORDER_RELEASE ord_rel on ord_mov.order_release_gid = ord_rel.order_release_gid
+ left outer join ORDER_RELEASE_REFNUM ord_rel_ref_col651 on ord_rel.order_release_gid = ord_rel_ref_col651.order_release_gid and ord_rel_ref_col651.order_release_refnum_qual_gid='ULE.ULE_TRANSPORT_CONDITION'
+ left outer join ORDER_RELEASE_REFNUM ord_rel_ref_col652 on ord_rel.order_release_gid = ord_rel_ref_col652.order_release_gid and ord_rel_ref_col652.order_release_refnum_qual_gid='ULE.ULE_MATERIAL_TYPE'
+ left outer join ORDER_RELEASE_REFNUM ord_rel_ref_col653 on ord_rel.order_release_gid = ord_rel_ref_col653.order_release_gid and ord_rel_ref_col653.order_release_refnum_qual_gid='ULE.ULE_MATERIAL_CATEGORY'
+WHERE
+sh.IS_SPOT_COSTED ='Y'
+and
+sh.INSERT_DATE > to_date('01-01-2016','dd-mm-yyyy')
+and sh.INSERT_DATE < to_date('01-01-2017','dd-mm-yyyy')
+and
+case when sh.domain_name='ULE/PR' and not exists (select 1
+  from SHIPMENT_REFNUM sh_ref1
+  where sh_ref1.shipment_refnum_qual_gid='ULE.ULE_SHIPMENT_STREAM' and sh_ref1.shipment_refnum_value='SECONDARY' and sh.shipment_gid = sh_ref1.shipment_gid) then 1 else 0 end =1
+and
+case 
+  when exists(select 1 from SHIPMENT_STATUS sh_stat1 where rpt_general.f_remove_domain(sh_stat1.status_type_gid)='TRANSPORT CANCELLATION' and rpt_general.f_remove_domain(sh_stat1.status_value_gid)='CANCELLED' and sh.shipment_gid = sh_stat1.shipment_gid) then 'Cancelled' 
+  else 'Not Cancelled'
+end ='Not Cancelled'
+
+
+GROUP BY
+sh.SHIPMENT_GID,
+sh.SOURCE_LOCATION_GID,
+pic_loc.CITY,
+sh.DEST_LOCATION_GID,
+del_loc.CITY,
+ to_char(sh.start_time,'DD-MM-YYYY'),
+ to_char(sh.end_time,'DD-MM-YYYY'),
+sh.SERVPROV_GID,
+sh.FIRST_EQUIPMENT_GROUP_GID,
+sh.PLANNED_RATE_GEO_GID,
+sh.CURRENCY_GID,
+sh.INSERT_USER,
+to_char(sh.insert_date,'dd-mm-yyyy'),
+sh_ref_reg.SHIPMENT_REFNUM_VALUE,
+sh_ref_col371.SHIPMENT_REFNUM_VALUE,
+ord_rel.ORDER_RELEASE_XID,
+ord_rel_ref_col651.ORDER_RELEASE_REFNUM_VALUE,
+ord_rel_ref_col652.ORDER_RELEASE_REFNUM_VALUE,
+ord_rel_ref_col653.ORDER_RELEASE_REFNUM_VALUE,
+to_char(sh_stop_pick.planned_arrival,'MONTH'),
+to_char(sh_stop_pick.planned_arrival,'IW'),
+to_char(sh_stop_del.planned_arrival,'MONTH'),
+to_char(sh_stop_del.planned_arrival,'IW'),
+pic_loc.country_code3_gid,
+del_loc.country_code3_gid
