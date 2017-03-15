@@ -7,6 +7,7 @@ sh.shipment_gid
 ,DECODE(sh_ref_tm.shipment_refnum_value,'ROAD-SEA','SINGLE-MODAL','ROAD','SINGLE-MODAL','INTERMODAL') trans_mode
 ,s_eq.equipment_group_gid EQUIPMENT
 ,ROUND(sh.total_weight_base*0.45359237,0)   weight
+,sh.TOTAL_SHIP_UNIT_COUNT                                               TOTAL_SHIP_UNIT_COUNT
 
 FROM shipment sh
 ,shipment_refnum sh_ref_reg
@@ -50,7 +51,8 @@ AND egeru.EQUIPMENT_REFERENCE_UNIT_GID = 'ULE.PFS-EURO_PAL'
 ELSE sh.total_num_reference_units			END,0)),0)
     ,33
 )	                                                                                                                                                         PFS
-,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                         WEIGHT
+,sh.TOTAL_SHIP_UNIT_COUNT                                                                                                                                   TOTAL_SHIP_UNIT_COUNT
+,nvl(NULLIF(sh.total_weight_base*0.45359237,0),1)                                                                                                            WEIGHT
 ,CASE WHEN sh.rate_geo_gid is null then 'N/A'
 ELSE to_char(ROUND(sh.TOTAL_VOLUME_BASE*0.02831685))
 END                                                                                                                                                TOTAL_VOLUME_CUM
@@ -270,6 +272,7 @@ AND loc_ref.location_refnum_qual_gid = 'ULE.ULE_MSO'
 ))																																                                                RECEIVING_MSO
 ,rd.flatto                                                                                                                                                   FLATTO
 ,rd.pfs																											                                            PFS
+,rd.TOTAL_SHIP_UNIT_COUNT                                                                                                                                   TOTAL_SHIP_UNIT_COUNT
 
 ,rd.weight																															                        PALLET_GROSS_WEIGHT_KG
 ,rd.TOTAL_VOLUME_CUM                                                                                                                                            TOTAL_VOLUME_CUM
