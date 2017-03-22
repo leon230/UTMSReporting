@@ -162,7 +162,33 @@ ELSE
  	)
  )   END),0)
  ,24000)                                                                                                                                     TRUCK_CAPACITY_WEIGHT
+,(select listagg(orls_ref.order_release_refnum_value,'/') within group (order by sh.shipment_gid)
+from order_release_refnum orls_ref
+,order_movement om
+where om.shipment_gid = sh.shipment_gid
+and orls_ref.order_release_gid = om.order_release_gid
+and orls_ref.order_release_refnum_qual_gid IN ('ULE.ULE_SHIPPING_CONDITION','UL_SHIPPING_CONDITION')
+)                                                                                                                                           shipping_condition
 
+,'"'||(
+		select listagg(orlsr_po.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY sh.shipment_gid)
+		from ORDER_RELEASE_REFNUM orlsr_po
+		,order_movement om
+		where om.ORDER_RELEASE_GID = orlsr_po.ORDER_RELEASE_GID
+		and om.shipment_gid = sh.shipment_gid
+				AND orlsr_po.ORDER_RELEASE_REFNUM_QUAL_GID IN
+				('PO','ULE.ULE_PO_NUMBER','ULE.ULE_SAP_PO_NUMBER','CUST_PO','ULE.ULE_FINANCE_PO_NUMBER')
+		)||'"' AS 																																		OR_PO_NUM
+,'"'||(
+		select listagg(orlsr_DN_ULE.ORDER_RELEASE_REFNUM_VALUE,'|') WITHIN GROUP (ORDER BY sh.shipment_gid)
+		from ORDER_RELEASE_REFNUM orlsr_DN_ULE
+		,order_movement om
+		where om.ORDER_RELEASE_GID = orlsr_DN_ULE.ORDER_RELEASE_GID
+		and om.shipment_gid = sh.shipment_gid
+				AND orlsr_DN_ULE.ORDER_RELEASE_REFNUM_QUAL_GID IN ('ULE.ULE_DN_NUMBER','UL_SAP_DN')
+
+
+		)||'"' AS 																																		OR_DN_NUM
 
 ,nvl(TRIM(
  (SELECT
@@ -340,6 +366,9 @@ ELSE
 
 END
 )) END)                                                                                                                                                         WASTAGE
+,rd.shipping_condition
+,rd.OR_PO_NUM
+,rd.OR_DN_NUM
 
 
 FROM shipment sh
